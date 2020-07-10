@@ -16,7 +16,7 @@ function establishConnection() {
 }
 
 function processMessage(msg) {
-    console.log(msg);
+    //console.log(msg);
 }
 
 

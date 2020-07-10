@@ -1,16 +1,22 @@
 //HTML/Canvas
 var ctx;
 var canvas;
-canvas = document.getElementById("mainCanvas");
+canvas = document.getElementById("canvas");
 ctx = canvas.getContext("2d");
 
 //Networking
 var serverIP = "localhost"
 var serverPort = ":32457";
 var localUsername = getQueryVariable("username");
+var character = getQueryVariable("character");
 if (!localUsername) {
     throw ("no username selected, unexpected results could occur. \n Please Relog.")
 }
+
+if (!localUsername) {
+    throw ("no character selected, unexpected results could occur. \n Please Relog.")
+}
+
 var connection;
 
 //Game Loop
@@ -26,9 +32,6 @@ var SKIP_TICKS = 1000 / TICKS_PER_SECOND;
 
 //instance
 var player = newPlayer();
-
-
-
 
 
 //useful functions

@@ -1,0 +1,15 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "serverHost.js",
+  "dependencies": {
+    "websocket": "^1.0.26"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node serverHost.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
