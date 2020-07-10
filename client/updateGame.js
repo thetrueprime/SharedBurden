@@ -1,0 +1,8 @@
+
+function update(){
+
+    //Game running
+
+
+
+}
