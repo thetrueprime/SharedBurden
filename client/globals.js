@@ -13,7 +13,7 @@ if (!localUsername) {
     throw ("no username selected, unexpected results could occur. \n Please Relog.")
 }
 
-if (!localUsername) {
+if (!character) {
     throw ("no character selected, unexpected results could occur. \n Please Relog.")
 }
 
@@ -32,6 +32,9 @@ var SKIP_TICKS = 1000 / TICKS_PER_SECOND;
 
 //instance
 var player = newPlayer();
+var world = {};
+
+
 
 
 //useful functions

@@ -12,18 +12,22 @@ let playerConnections = [];
 var port = "32457";
 
 var server = http.createServer(
-    function (request, response) {
+    function(request, response) {
         console.log((new Date()) + " Received request for " + request.url);
         response.writeHead(404);
         response.end();
     }
 );
 
-server.listen(port, function () {
+server.listen(port, function() {
     console.log((new Date()) + " Server is listening on port " + port);
 });
 
 var dateTimes = {};
+
+var worldInfluencePlayerObjects = {};
+
+
 function hostServer() {
 
     var wsServer = new WebSocketServer({
@@ -31,7 +35,7 @@ function hostServer() {
         autoAcceptConnections: true // You should use false here!
     });
 
-    wsServer.on('connect', function (connection) {
+    wsServer.on('connect', function(connection) {
         console.log((new Date()) + " Connection accepted!");
         connections.push(connection);
 
@@ -40,11 +44,41 @@ function hostServer() {
         // is a message sent by a client, and may be text to share with
         // other users or a command to the server.
 
-        connection.on('message', function (message) {
+        connection.on('message', function(message) {
             if (message.type === 'utf8') {
                 msg = JSON.parse(message.utf8Data);
                 if (msg.type == "player") {
-                    
+
+                    if ("worldinfluence" in msg) {
+                        var worldObjects = msg.worldinfluence;
+                        var objectsReceived = {};
+                        if (msg.uniqueID in worldInfluencePlayerObjects) {
+                            objectsReceived = worldInfluencePlayerObjects[msg.uniqueID];
+                        }
+                        for (var objID in worldObjects) {
+                            console.log("Here ");
+                            console.log(msg);
+                            var object = worldObjects[objID];
+                            if ("status" in object) {
+                                if (object.status == "removed") {
+                                    delete world[object.uniqueID];
+                                }
+                                if (object.status == "alive") {
+                                    world[object.uniqueID] = object;
+                                }
+                            }
+
+                            console.log("Recieved World Influence Object: " +
+                                object.uniqueID);
+                            objectsReceived[object.uniqueID] = object;
+                        }
+                        worldInfluencePlayerObjects[msg.uniqueID] = objectsReceived;
+                        delete msg.worldinfluence;
+                    }
+
+                    connectionsPlayers[connection] = msg.uniqueID;
+
+                    world[msg.uniqueID] = msg;
                 }
             }
         });
@@ -52,25 +86,44 @@ function hostServer() {
         // Handle the WebSocket "close" event; this means a user has logged off
         // or has been disconnected.
 
-        connection.on('close', function (connection) {
+        connection.on('close', function(connection) {
             console.log("Player Disconnected")
-         
+
         });
     });
 }
 
 var world = {};
+
+var connectionsPlayers = {};
+
 function sendOutUpdates() {
     for (var connection of connections) {
+        var playerId = connectionsPlayers[connection];
+        if (playerId) {
+            var worldObjects = worldInfluencePlayerObjects[playerId];
+            if (countProps(worldObjects)) {
+                var toSend = { type: "worldInfluenceAck", objects: worldObjects };
+                console.log("Sending");
+                console.log(toSend);
+                connection.send(JSON.stringify(toSend));
+                delete worldInfluencePlayerObjects[playerId];
+            }
+        }
         connection.send(JSON.stringify(world));
     }
     setTimeout(sendOutUpdates, 100);
 }
 
+function countProps(obj) {
+    var l = 0;
+    for (p in obj) l++;
+    return l;
+}
 
-function gameLoop(){
+function gameLoop() {
     //Game running
-
+    world = imports.mainLoop(world);
 }
 
 
@@ -79,6 +132,7 @@ var TICKS_PER_SECOND = 20;
 var SKIP_TICKS = 1000 / TICKS_PER_SECOND;
 var MAX_FRAMESKIP = 5;
 var loops = 0;
+
 function gameStateRunner() {
     if (Date.now() > next_game_tick && loops < MAX_FRAMESKIP) {
         loops++;

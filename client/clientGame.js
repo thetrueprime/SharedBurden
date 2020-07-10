@@ -16,6 +16,22 @@ function establishConnection() {
 }
 
 function processMessage(msg) {
+    var type = msg.type;
+    if (type) {
+        if (type == "worldInfluenceAck") {
+            console.log("Received: ");
+            console.log(msg);
+            var objects = msg.objects;
+            for (var objID in objects) {
+                var obj = objects[objID];
+                delete player.worldinfluence[obj.uniqueID];
+            }
+        }
+    } else {
+        var tempworld = msg;
+        tempworld[player.uniqueID] = player;
+        world = tempworld;
+    }
     //console.log(msg);
 }
 
