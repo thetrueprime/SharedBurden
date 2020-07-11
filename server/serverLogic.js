@@ -46,7 +46,7 @@ module.exports = {
             }
         }
         if (currentPlayers > 0) {
-            if (currentMonsters < 5) {
+            if (currentMonsters < 1) {
                 world = spawnMonsters(world);
             }
         }
@@ -154,6 +154,7 @@ function spawnMonsters(world) {
         type: "monster",
         target: "",
         health: 8,
+        maxhealth: 8,
         xpos: 0,
         ypos: 0,
         xvel: 0,

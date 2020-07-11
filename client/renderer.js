@@ -12,6 +12,74 @@ function displayMessage(message) {
 }
 
 
+class TerrainManager {
+    constructor(src) {
+        if (typeof Image !== 'undefined') {
+            this.image = new Image();
+            this.image.src = src;
+        }
+        this.sx = 0;
+        this.sy = 0;
+        this.tileWidth = 24;
+        this.type = '9'
+    }
+
+    drawTilesImage(ctx, x, y, width, height, scale) {
+        var displaywidth = this.tileWidth / scale;
+        var maxx = width / (displaywidth) - 1;
+        var maxy = height / (displaywidth) - 1;
+        for (var xit = 0; xit <= (maxx); xit++) {
+            for (var yit = 0; yit <= (maxy); yit++) {
+                var tileXOffset = displaywidth * xit;
+                var tileYOffset = displaywidth * yit;
+                if (this.type == 'tile') {
+                    ctx.drawImage(this.image, this.sx + this.tileWidth, this.sy + this.tileWidth, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                } else
+                if (this.type == 'full') {
+                    ctx.drawImage(this.image, 0, 0, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                } else if (this.type == '9') {
+                    if (xit == 0) {
+                        if (yit != 0) {
+                            if (yit == maxy) {
+                                ctx.drawImage(this.image, this.sx, this.sy + this.tileWidth * 2, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                            } else {
+                                ctx.drawImage(this.image, this.sx, this.sy + this.tileWidth * 1, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                            }
+                        } else {
+                            ctx.drawImage(this.image, this.sx, this.sy, this.tileWidth, this.tileWidth, x, y, displaywidth, displaywidth);
+                        }
+                    } else if (yit == 0) {
+                        if (xit == maxx) {
+                            ctx.drawImage(this.image, this.sx + this.tileWidth * 2, this.sy, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                        } else {
+                            ctx.drawImage(this.image, this.sx + this.tileWidth * 1, this.sy, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                        }
+                    } else if (yit == maxy) {
+                        if (xit == maxx) {
+                            ctx.drawImage(this.image, this.sx + this.tileWidth * 2, this.sy + this.tileWidth * 2, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                        } else {
+                            ctx.drawImage(this.image, this.sx + this.tileWidth * 1, this.sy + this.tileWidth * 2, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                        }
+                    } else if (xit == maxx) {
+                        if (yit == maxy) {
+                            ctx.drawImage(this.image, this.sx + this.tileWidth * 2, this.sy + this.tileWidth * 2, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                        } else {
+                            ctx.drawImage(this.image, this.sx + this.tileWidth * 2, this.sy + this.tileWidth * 1, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                        }
+                    } else {
+                        ctx.drawImage(this.image, this.sx + this.tileWidth * 1, this.sy + this.tileWidth * 1, this.tileWidth, this.tileWidth, x + tileXOffset, y + tileYOffset, displaywidth, displaywidth);
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+var floor = new TerrainManager('images/tempfloor.png')
+floor.type = "full";
+floor.tileWidth = 128;
+
 function drawTerrain() {
     for (floorID in level) {
         var flooring = level[floorID];
@@ -26,10 +94,16 @@ function drawTerrain() {
                 ctx.fillStyle = "#35654d";
             }
         }
+        if (type == "grappleBlock") {
+            ctx.fillStyle = "#654321";
+        }
         if (type == "solid") {
             ctx.fillStyle = "#808000";
         }
         ctx.fillRect(flooring.x, flooring.y, flooring.w, flooring.h);
+        if (type == "cobblefloor") {
+            floor.drawTilesImage(ctx, flooring.x, flooring.y, flooring.w, flooring.h, 2);
+        }
     }
 }
 
@@ -39,7 +113,8 @@ var loadedTextures = {};
 var texturesToLoad = [
     { src: "images/first.png", key: "Swords" },
     { src: "images/gamejam_skates_pink.png", key: "Skates" },
-    { src: "images/gamejam_jetpack.png", key: "Jetpack" }
+    { src: "images/gamejam_jetpack.png", key: "Jetpack" },
+    { src: "images/gamejam_grapplinghook.png", key: "Grapple" }
 ]
 
 function loadImages() {
@@ -125,6 +200,8 @@ function draw(interp) {
                 ctx.rect(useX - 18, useY - 20, 20, 20);
                 ctx.stroke();
             }
+            ctx.fillStyle = "#00FF00";
+            ctx.fillRect(useX - 18, useY - 25, 20 * object.inventory.burntimes[0] / 100, 5);
             if (inv.secondary != "") {
                 ctx.fillStyle = "#9400D3";
                 ctx.fillRect(useX + 2, useY - 20, 20, 20);
@@ -138,6 +215,8 @@ function draw(interp) {
                 ctx.rect(useX + 2, useY - 20, 20, 20);
                 ctx.stroke();
             }
+            ctx.fillStyle = "#00FF00";
+            ctx.fillRect(useX + 2, useY - 25, 20 * object.inventory.burntimes[1] / 100, 5);
             if (inv.movement != "") {
                 ctx.fillStyle = "#9400D3";
                 ctx.fillRect(useX + 24, useY - 20, 20, 20);
@@ -151,6 +230,8 @@ function draw(interp) {
                 ctx.rect(useX + 24, useY - 20, 20, 20);
                 ctx.stroke();
             }
+            ctx.fillStyle = "#00FF00";
+            ctx.fillRect(useX + 24, useY - 25, 20 * object.inventory.burntimes[2] / 100, 5);
             if (playerclass == "chef") {
                 if ("grappling" in object) {
                     ctx.beginPath();
@@ -190,7 +271,9 @@ function draw(interp) {
             ctx.fillRect(useX, useY, 8, 8);
         } else if (object.type == "monster") {
             ctx.fillStyle = "#FCFC1D";
-            ctx.fillRect(useX, useY, 50, 50);
+            ctx.fillRect(useX, useY, 35, 35);
+            ctx.fillStyle = "#FF0000";
+            ctx.fillRect(useX, useY - 5, 35 * object.health / object.maxhealth, 5);
         }
         if ("animations" in object) {
             var anim = object.animations;

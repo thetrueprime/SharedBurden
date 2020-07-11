@@ -55,10 +55,10 @@ function update() {
             var grapplePos = { x: gx, y: gy };
             if (isGrappling && (isPressing(KEY_CODES.lmb) || isPressing(KEY_CODES.rmb))) {
                 grapplePos = player.grappling;
-                console.log("here");
             }
             isGrappling = false;
-            if (getFloorTypeAt(grapplePos.x, grapplePos.y, level) == "grappleBlock") {
+            var flooratGrapple = getFloorTypeAt(grapplePos.x, grapplePos.y, level);
+            if (flooratGrapple == "grappleBlock") {
                 if (isPressing(KEY_CODES.lmb)) {
                     isGrappling = true;
                     var xpos = player.xpos;
@@ -111,6 +111,7 @@ function update() {
 
                 if (isPressing(KEY_CODES.rmb)) {
                     isGrappling = true;
+                    console.log(grapplePos);
                     var xpos = player.xpos;
                     var ypos = player.ypos;
                     var xvel = player.xvel;
@@ -244,9 +245,28 @@ function update() {
                 player.yvel *= 0.9;
             }
         }
+        if (isPressing(KEY_CODES.primary)) {
+            let toremove = -1;
+            var items = player.inventory.items;
+            for (let itemID = 0; itemID < items.length; itemID++) {
+                let item = items[itemID];
+                if (item.type == "key") {
+                    console.log("Using Key");
+                    displayMessage("Using Key");
+                    if (useKey()) {
+                        toremove = itemID;
+                        //playAnim("key");
+                        break;
+                    }
+                }
+            }
+            if (toremove > -1) {
+                items.splice(toremove, 1);
+            } else {
+                displayMessage("You don't have any keys!");
+            }
+        }
     }
-
-
     var possx = player.xpos + player.xvel;
     var possy = player.ypos + player.yvel;
 
@@ -283,20 +303,107 @@ function update() {
     } else {
         friction = 0.99;
     }
-
     player.xvel *= friction;
     player.yvel *= friction;
 
 
-    if (isPressing(KEY_CODES.one)) {
+
+    //----------------------- ATTACKS ------------------
+    for (var i = 0; i < 3; i++) {
+        player.cooldowns[i]--;
+        if (player.cooldowns[i] <= 0) player.cooldowns[i] = 0;
+    }
+    //Chef - Knife while Cooking, Fire while Cooking
+    //Engineer - Knife intentionally
+    //Fighter - Whip Knockback, Jetpack flame thrower
+    if (character == "fighter") {
+        //WHIP
+        if (inventory.primary != "") {
+            if (isPressing(KEY_CODES.lmb)) {
+                if (player.cooldowns[0] <= 0) {
+                    player.cooldowns[0] = player.maxcooldowns[0];
+                    let xpos = player.xpos;
+                    let ypos = player.ypos;
+                    let facing = getPlayerFacing();
+                    let range = 100;
+                    let angle = Math.PI;
+                    let damage = 4;
+                    let effect = "KNOCKBACK"
+                    console.log("Attacking!");
+                    damageField(xpos, ypos, facing, range, angle, damage, effect);
+                }
+            }
+        }
+    }
+
+
+
+
+
+    //----------------------- TOOLS ---------------
+    // Engineer grab things with grappling
+
+
+
+
+    var holdtimechange = 0.25;
+    if (inventory.primary != "") {
+        player.inventory.burntimes[0] -= holdtimechange;
+    } else {
+        player.inventory.burntimes[0] += holdtimechange;
+        if (player.inventory.burntimes[0] > 100) player.inventory.burntimes[0] = 100;
+    }
+    if (inventory.secondary != "") {
+        player.inventory.burntimes[1] -= holdtimechange;
+    } else {
+        player.inventory.burntimes[1] += holdtimechange;
+        if (player.inventory.burntimes[1] > 100) player.inventory.burntimes[1] = 100;
+    }
+    if (inventory.movement != "") {
+        player.inventory.burntimes[2] -= holdtimechange;
+    } else {
+        player.inventory.burntimes[2] += holdtimechange;
+        if (player.inventory.burntimes[2] > 100) {
+            player.inventory.burntimes[2] = 100;
+            var movementAbility = "Grapple";
+            if (character == "engineer") {
+                movementAbility = "Jetpack";
+            }
+            if (character == "fighter") {
+                movementAbility = "Skates";
+            }
+            if (movementAbility in world) {
+                if (isPressing(KEY_CODES.chuck)) {
+                    var cando = equipIfCan(movementAbility);
+                    if (cando) {
+                        console.log("Picked");
+                        world[movementAbility].status = "removed";
+                        player.worldinfluence[movementAbility] = world[movementAbility];
+                    }
+                }
+            }
+        }
+    }
+
+    if (isPressing(KEY_CODES.one) || player.inventory.burntimes[0] <= 0) {
+        if (player.inventory.burntimes[0] <= 0) {
+            takeDamage(10);
+        }
         chuck(1);
     }
-    if (isPressing(KEY_CODES.two)) {
+    if (isPressing(KEY_CODES.two) || player.inventory.burntimes[1] <= 0) {
+        if (player.inventory.burntimes[1] <= 0) {
+            takeDamage(10);
+        }
         chuck(2);
     }
-    if (isPressing(KEY_CODES.three)) {
+    if (isPressing(KEY_CODES.three) || player.inventory.burntimes[2] <= 0) {
+        if (player.inventory.burntimes[2] <= 0) {
+            takeDamage(10);
+        }
         chuck(3);
     }
+
 
     if (isPressing(KEY_CODES.chuck)) {
         pickup();
@@ -305,12 +412,92 @@ function update() {
 
 
     world[player.uniqueID] = player;
-
+    removeDoors();
 
     otherPlayers();
     physics();
     enemies();
 }
+
+
+function damageField(xpos, ypos, facing, range, angle, damage, effect) {
+    for (var worldID in world) {
+        var obj = world[worldID];
+        if (obj.type == "monster") {
+            var mxpos = obj.xpos;
+            var mypos = obj.ypos;
+            console.log("xpos:" + xpos + " ypos:" + ypos + " mxpos:" + mxpos + " mypos:" + mypos);
+            if (dist(xpos, ypos, mxpos, mypos) < range) {
+                var facingAngle = Math.atan2(facing.y, facing.x);
+                console.log("FacingAngle:" + facingAngle);
+                var enemyAngle = Math.atan2(mypos - ypos, mxpos - xpos);
+                console.log("EnemyAngle:" + enemyAngle);
+                if (Math.abs(enemyAngle - facingAngle) < angle / 2) {
+                    console.log("Shot Lined up");
+                    //DAMGE CAN BE GIVEN;
+                    obj.health -= damage;
+                    if (effect == "KNOCKBACK") {
+                        obj.xvel = facing.x;
+                        obj.yvel = facing.y;
+                        player.worldinfluence[worldID] = obj;
+                    }
+                }
+            }
+        }
+    }
+}
+
+function takeDamage(damageAmount) {
+    player.health = player.health - damageAmount;
+    if (player.health < 0) {
+        displayMessage("you dead");
+    }
+}
+
+
+function removeDoors() {
+    for (let worldID in world) {
+        if (worldID != player.uniqueID) {
+            let object = world[worldID];
+            if (object.type == "openDoor") {
+                delete level[object.door1ID];
+                delete level[object.door2ID];
+            }
+        }
+    }
+}
+
+
+
+function useKey() {
+    var doorSide1 = false;
+    var doorSide2 = false;
+    for (let li in level) {
+        var door = level[li];
+        if (door.type == "door") {
+            var howfar = dist(player.xpos, player.ypos, door.x, door.y);
+            if (howfar < 100) {
+                console.log(li + " HowFar: " + howfar);
+                if (!doorSide1) {
+                    doorSide1 = li;
+                } else {
+                    doorSide2 = li;
+                }
+            }
+        }
+    }
+    console.log("DoorSide1 " + doorSide1 + " DoorSide2" + doorSide2);
+    if (doorSide1 && doorSide2) {
+        let id = randID();
+        player.worldinfluence[id] = { uniqueID: id, type: "openDoor", status: "alive", xpos: 0, ypos: 0, door1ID: doorSide1, door2ID: doorSide2 };
+        return true;
+    }
+    return false;
+}
+
+
+
+
 
 
 function playAnim(animname) {
@@ -458,8 +645,9 @@ function chuck(slotnumber) {
     var x = player.xpos;
     var y = player.ypos;
     var facing = getPlayerFacing();
-    var xv = facing.x;
-    var yv = facing.y;
+    var speed = 8;
+    var xv = facing.x * speed;
+    var yv = facing.y * speed;
     if (slotnumber == 1) {
         if (inventory.primary != "") {
             console.log("Chucking " + slotnumber);

@@ -19,8 +19,11 @@ function newPlayer() {
             primary: "",
             secondary: "",
             movement: movementAbility,
+            burntimes: [100, 100, 100],
             items: []
         },
+        cooldowns: [0, 0, 0],
+        maxcooldowns: [100, 100, 100],
         animations: {
             name: "",
             current: 0,

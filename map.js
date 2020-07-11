@@ -11,8 +11,8 @@ module.exports = {
 
 var maxX = 5;
 var maxY = 5;
-var roomWidth = 500;
-var roomHeight = 500;
+var roomWidth = 512;
+var roomHeight = 512;
 
 function generateLevel(MapData) {
     var map = {};
@@ -39,11 +39,20 @@ function generateLevel(MapData) {
 }
 
 function generateRoom(type, startx, starty, width, height, roomData) {
-    var doorthick = 25;
-    var wallthick = 20;
+    var doorthick = 32;
+    var wallthick = 16;
 
 
     var room = {};
+
+    room["basefloor"] = {
+        x: startx,
+        y: starty,
+        w: width,
+        h: height,
+        type: "cobblefloor"
+    }
+
     room["topWall"] = {
         x: startx,
         y: starty,
@@ -66,12 +75,13 @@ function generateRoom(type, startx, starty, width, height, roomData) {
         type: "solid"
     }
     room["leftWall"] = {
-        x: startx,
-        y: starty,
-        w: wallthick,
-        h: height,
-        type: "solid"
-    }
+            x: startx,
+            y: starty,
+            w: wallthick,
+            h: height,
+            type: "solid"
+        }
+        //EMPTY room (extra grapple points?)
     if (type == "empty") {
         room["topLeft"] = {
             x: startx,
@@ -111,6 +121,14 @@ function generateRoom(type, startx, starty, width, height, roomData) {
         }
     }
     if (roomData.left) {
+        //make whole for door
+        room["leftWall"] = {
+            x: startx,
+            y: starty,
+            w: wallthick,
+            h: -height / 10 + height / 2,
+            type: "solid"
+        }
         room["leftDoor"] = {
             x: startx,
             y: starty - height / 10 + height / 2,
@@ -119,8 +137,23 @@ function generateRoom(type, startx, starty, width, height, roomData) {
             locked: true,
             type: "door"
         }
+        room["leftWallLower"] = {
+            x: startx,
+            y: starty + height / 10 + height / 2,
+            w: wallthick,
+            h: -height / 10 + height / 2,
+            type: "solid"
+        }
     }
     if (roomData.right) {
+
+        room["rightWall"] = {
+            x: startx + width - wallthick,
+            y: starty,
+            w: wallthick,
+            h: -height / 10 + height / 2,
+            type: "solid"
+        }
         room["rightDoor"] = {
             x: startx + width - doorthick,
             y: starty - height / 10 + height / 2,
@@ -129,8 +162,22 @@ function generateRoom(type, startx, starty, width, height, roomData) {
             locked: true,
             type: "door"
         }
+        room["rightWallLower"] = {
+            x: startx + width - wallthick,
+            y: starty + height / 10 + height / 2,
+            w: wallthick,
+            h: -height / 10 + height / 2,
+            type: "solid"
+        }
     }
     if (roomData.up) {
+        room["topWall"] = {
+            x: startx,
+            y: starty,
+            w: -width / 10 + width / 2,
+            h: wallthick,
+            type: "solid"
+        }
         room["upDoor"] = {
             x: startx - width / 10 + width / 2,
             y: starty,
@@ -139,8 +186,22 @@ function generateRoom(type, startx, starty, width, height, roomData) {
             locked: true,
             type: "door"
         }
+        room["topWallRighter"] = {
+            x: startx + width / 10 + width / 2,
+            y: starty,
+            w: -width / 10 + width / 2,
+            h: wallthick,
+            type: "solid"
+        }
     }
     if (roomData.down) {
+        room["bottomWall"] = {
+            x: startx,
+            y: starty + height - wallthick,
+            w: -width / 10 + width / 2,
+            h: wallthick,
+            type: "solid"
+        }
         room["downDoor"] = {
             x: startx - width / 10 + width / 2,
             y: starty + height - doorthick,
@@ -148,6 +209,13 @@ function generateRoom(type, startx, starty, width, height, roomData) {
             h: doorthick,
             locked: true,
             type: "door"
+        }
+        room["bottomWallRighter"] = {
+            x: startx + width / 10 + width / 2,
+            y: starty + height - wallthick,
+            w: -width / 10 + width / 2,
+            h: wallthick,
+            type: "solid"
         }
     }
     room["topgrapple"] = {
@@ -190,8 +258,25 @@ function getFloorTypeAt(x, y, level) {
         var type = flooring.type;
         if (flooring.x <= x && flooring.x + flooring.w >= x && flooring.y <= y && flooring.y + flooring.h >= y) {
             allType.push(type);
-            return type;
         }
+    }
+    for (var i = 0; i < allType.length; i++) {
+        if (allType[i] == "door") {
+            return allType[i];
+        }
+    }
+    for (var i = 0; i < allType.length; i++) {
+        if (allType[i] == "solid") {
+            return allType[i];
+        }
+    }
+    for (var i = 0; i < allType.length; i++) {
+        if (allType[i] == "grappleBlock") {
+            return allType[i];
+        }
+    }
+    if (allType.length > 0) {
+        return allType[0];
     }
 }
 
