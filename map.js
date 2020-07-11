@@ -1,5 +1,12 @@
 let levelGenned = false;
-
+module.exports = {
+    buildLocalLevel: function(MapData) {
+        return generateLevel(MapData);
+    },
+    collisionCheck: function(possx, possy, locallevel) {
+        return collisionCheck(possx, possy, locallevel);
+    }
+};
 
 
 var maxX = 5;
@@ -32,47 +39,77 @@ function generateLevel(MapData) {
 }
 
 function generateRoom(type, startx, starty, width, height, roomData) {
+    var doorthick = 25;
+    var wallthick = 20;
+
+
     var room = {};
+    room["topWall"] = {
+        x: startx,
+        y: starty,
+        w: width,
+        h: wallthick,
+        type: "solid"
+    }
+    room["rightWall"] = {
+        x: startx + width - wallthick,
+        y: starty,
+        w: wallthick,
+        h: height,
+        type: "solid"
+    }
+    room["bottomWall"] = {
+        x: startx,
+        y: starty + height - wallthick,
+        w: width,
+        h: wallthick,
+        type: "solid"
+    }
+    room["leftWall"] = {
+        x: startx,
+        y: starty,
+        w: wallthick,
+        h: height,
+        type: "solid"
+    }
     if (type == "empty") {
-        room = {
-            topLeft: {
-                x: startx,
-                y: starty,
-                w: width / 5,
-                h: height / 5,
-                type: "field"
-            },
-            topRight: {
-                x: startx + width - width / 5,
-                y: starty,
-                w: width / 5,
-                h: height / 5,
-                type: "field"
-            },
-            bottomLeft: {
-                x: startx,
-                y: starty + height - height / 5,
-                w: width / 5,
-                h: height / 5,
-                type: "field"
-            },
-            bottomRight: {
-                x: startx + width - width / 5,
-                y: starty + height - height / 5,
-                w: width / 5,
-                h: height / 5,
-                type: "field"
-            },
-            mid: {
-                x: startx + width / 2,
-                y: starty + height / 2,
-                w: width / 5,
-                h: height / 5,
-                type: "grappleBlock"
-            }
+        room["topLeft"] = {
+            x: startx,
+            y: starty,
+            w: width / 5,
+            h: height / 5,
+            type: "field"
+        }
+
+        room["topRight"] = {
+            x: startx + width - width / 5,
+            y: starty,
+            w: width / 5,
+            h: height / 5,
+            type: "field"
+        }
+        room["bottomLeft"] = {
+            x: startx,
+            y: starty + height - height / 5,
+            w: width / 5,
+            h: height / 5,
+            type: "field"
+        }
+        room["bottomRight"] = {
+            x: startx + width - width / 5,
+            y: starty + height - height / 5,
+            w: width / 5,
+            h: height / 5,
+            type: "field"
+        }
+        room["mid"] = {
+            x: startx + width / 2,
+            y: starty + height / 2,
+            w: width / 5,
+            h: height / 5,
+            type: "grappleBlock"
         }
     }
-    var doorthick = 25;
     if (roomData.left) {
         room["leftDoor"] = {
             x: startx,
@@ -113,7 +150,6 @@ function generateRoom(type, startx, starty, width, height, roomData) {
             type: "door"
         }
     }
-    var wallthick = 20;
     room["topgrapple"] = {
         x: startx,
         y: starty,
@@ -142,57 +178,28 @@ function generateRoom(type, startx, starty, width, height, roomData) {
         h: wallthick * 2,
         type: "grappleBlock"
     }
-    room["topWall"] = {
-        x: startx,
-        y: starty,
-        w: width,
-        h: wallthick,
-        type: "solid"
-    }
-    room["rightWall"] = {
-        x: startx + width - wallthick,
-        y: starty,
-        w: wallthick,
-        h: height,
-        type: "solid"
-    }
-    room["bottomWall"] = {
-        x: startx,
-        y: starty + height - wallthick,
-        w: width,
-        h: wallthick,
-        type: "solid"
-    }
-    room["leftWall"] = {
-        x: startx,
-        y: starty,
-        w: wallthick,
-        h: height,
-        type: "solid"
-    }
-
     return room;
 
 }
 
 
-function getFloorTypeAt(x, y) {
+function getFloorTypeAt(x, y, level) {
     var allType = [];
     for (floorID in level) {
         var flooring = level[floorID];
         var type = flooring.type;
-        if (flooring.x < x && flooring.x + flooring.w > x && flooring.y < y && flooring.y + flooring.h > y) {
+        if (flooring.x <= x && flooring.x + flooring.w >= x && flooring.y <= y && flooring.y + flooring.h >= y) {
             allType.push(type);
             return type;
         }
     }
 }
 
-function getFloorAt(x, y) {
+function getFloorAt(x, y, level) {
     var allFloor = [];
     for (floorID in level) {
         var flooring = level[floorID];
-        if (flooring.x < x && flooring.x + flooring.w > x && flooring.y < y && flooring.y + flooring.h > y) {
+        if (flooring.x <= x && flooring.x + flooring.w >= x && flooring.y <= y && flooring.y + flooring.h >= y) {
             allFloor.push(flooring);
         }
     }
@@ -209,4 +216,24 @@ function getFloorAt(x, y) {
     if (allFloor.length > 0) {
         return allFloor[0];
     }
+}
+
+
+function collisionCheck(possx, possy, level) {
+    //TODO
+    if (possx && possy) {
+        var terrain = getFloorAt(possx, possy, level);
+        if (terrain !== undefined) {
+            var type = terrain.type;
+            if (type == "solid") {
+                return false;
+            }
+            if (type == "door") {
+                if (terrain.locked) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }

@@ -1,5 +1,7 @@
+var mapMaker = require('../map')
+
 module.exports = {
-    mainLoop: function(world) {
+    mainLoop: function(world, localLevel) {
         var currentPlayers = 0;
         var currentMonsters = 0;
         var currentFood = 0;
@@ -9,14 +11,32 @@ module.exports = {
             if (type == "player") {
                 currentPlayers++;
             } else if (type == "item") {
-                var nextX = obj.xpos + obj.xvel;
-                var nextY = obj.ypos + obj.yvel;
-                if (nextX > 0 && nextX < 1000 && nextY > 0 && nextY < 1000) {
-                    obj.xpos = nextX;
-                    obj.ypos = nextY;
+                var possx = obj.xpos + obj.xvel;
+                var possy = obj.ypos + obj.yvel;
+                if (mapMaker.collisionCheck(possx, possy, localLevel)) {
+                    obj.xpos = possx;
+                    obj.ypos = possy;
                 } else {
-                    obj.xvel = -obj.xvel;
-                    obj.yvel = -obj.yvel;
+                    possx = obj.xpos + obj.xvel;
+                    possy = obj.ypos;
+                    if (mapMaker.collisionCheck(possx, possy, localLevel)) {
+                        obj.xpos = possx;
+                        obj.ypos = possy;
+                        obj.yvel = -obj.yvel;
+                    } else {
+                        possx = obj.xpos;
+                        possy = obj.ypos + obj.yvel;
+                        if (mapMaker.collisionCheck(possx, possy, localLevel)) {
+                            obj.xpos = possx;
+                            obj.ypos = possy;
+                            obj.xvel = -obj.xvel;
+                        } else {
+                            possx = obj.xpos;
+                            possy = obj.ypos;
+                            obj.xvel = -obj.xvel;
+                            obj.yvel = -obj.yvel;
+                        }
+                    }
                 }
             } else if (type == "monster") {
                 currentMonsters++;

@@ -80,3 +80,82 @@ function dist(sx, sy, ex, ey) {
 function getCurrentTime() {
     return Date.now();
 }
+
+function rayTrace(sx, sy, ex, ey, level) {
+    var bestRayV = 10000;
+    var bestRay = false;
+    for (var ti in level) {
+        var ta = level[ti];
+        if (ta.type == "solid" || ta.type == "grappleBlock") {
+            var ray = aabbContainsSegment(sx, sy, ex, ey, ta.x, ta.y, ta.x + ta.w, ta.y + ta.h)
+            if (ray) {
+                ray.terrain = ta;
+                var tdist = Math.sqrt(Math.pow(ray.x - sx, 2) + Math.pow(ray.y - sy, 2));
+                if (tdist < bestRayV) {
+                    bestRayV = tdist;
+                    bestRay = ray;
+                }
+            }
+        }
+    }
+    return bestRay;
+}
+
+function aabbContainsSegment(x1, y1, x2, y2, minX, minY, maxX, maxY) {
+    // Completely outside.
+    if ((x1 <= minX && x2 <= minX) || (y1 <= minY && y2 <= minY) || (x1 >= maxX && x2 >= maxX) || (y1 >= maxY && y2 >= maxY))
+        return false;
+
+    var m = (y2 - y1) / (x2 - x1);
+    var toreturn = false;
+    var bestdist = dist(x1, y1, x2, y2);
+
+
+
+    var x = (minY - y1) / m + x1;
+    var px = x;
+    var py = minY;
+    var thisdistance = distance(py - y1, px - x1);
+    if (x > minX && x < maxX) {
+        if (thisdistance <= bestdist) {
+            toreturn = { x: x, y: minY };
+            bestdist = thisdistance
+        }
+    };
+
+    x = (maxY - y1) / m + x1;
+    px = x;
+    py = maxY;
+    thisdistance = distance(py - y1, px - x1);
+    if (x > minX && x < maxX) {
+        if (thisdistance <= bestdist) {
+            toreturn = { x: x, y: maxY };
+            bestdist = thisdistance
+        }
+    };
+
+    var y = m * (minX - x1) + y1;
+    px = minX;
+    py = y;
+    thisdistance = distance(py - y1, px - x1);
+    if (y > minY && y < maxY) {
+        if (thisdistance <= bestdist) {
+            toreturn = { x: minX, y: y };
+            bestdist = thisdistance
+        }
+    };
+
+    y = m * (maxX - x1) + y1;
+    px = maxX;
+    py = y;
+    thisdistance = distance(py - y1, px - x1);
+    if (y > minY && y < maxY) {
+        if (thisdistance <= bestdist) {
+            toreturn = { x: maxX, y: y };
+            bestdist = thisdistance
+        }
+    };
+
+
+    return toreturn;
+}

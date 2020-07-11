@@ -19,6 +19,16 @@ function drawTerrain() {
         if (type == "field") {
             ctx.fillStyle = "#35654d";
         }
+        if (type == "door") {
+            if (!flooring.locked) {
+                ctx.fillStyle = "#FFFFFF";
+            } else {
+                ctx.fillStyle = "#35654d";
+            }
+        }
+        if (type == "solid") {
+            ctx.fillStyle = "#808000";
+        }
         ctx.fillRect(flooring.x, flooring.y, flooring.w, flooring.h);
     }
 }
@@ -28,7 +38,8 @@ var loadedTextures = {};
 
 var texturesToLoad = [
     { src: "images/first.png", key: "Swords" },
-    { src: "images/gamejam_skates_pink.png", key: "Skates" }
+    { src: "images/gamejam_skates_pink.png", key: "Skates" },
+    { src: "images/gamejam_jetpack.png", key: "Jetpack" }
 ]
 
 function loadImages() {
@@ -43,7 +54,7 @@ function loadImages() {
 }
 loadImages();
 
-var scale = 2;
+var scale = 1.5;
 
 var camerax = 0;
 var cameray = 0;
@@ -98,7 +109,7 @@ function draw(interp) {
                     ctx.font = "20px Calibri";
                     ctx.fillStyle = "#000000";
                     var messageWidth = ctx.measureText(currentMessage).width;
-                    ctx.fillText(currentMessage, useX + 12 - messageWidth / 2, useY - 12);
+                    ctx.fillText(currentMessage, useX + 12 - messageWidth / 2, useY - 21);
                 }
             }
             if (inv.primary != "") {
@@ -204,6 +215,9 @@ function draw(interp) {
             object.animations = anim;
         }
     }
+    mouspos = getMousePos();
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(mouspos.x, mouspos.y, 1, 1);
 }
 
 

@@ -31,12 +31,34 @@ function update() {
 
     ///MOVEMENT
     let inventory = player.inventory;
+    var maxspeed = 5;
     //CHEF
     if (character == "chef") {
         if (inventory.movement != "") {
-            var grapplePos = getMousePos();
+            var mousePos = getMousePos();
+            var startx = player.xpos;
+            var starty = player.ypos;
+            var diffx = mousePos.x - startx;
+            var diffy = mousePos.y - starty;
+            var ndiffx = diffx / distance(diffx, diffy);
+            var ndiffy = diffy / distance(diffx, diffy);
+            var length = 1000;
+            var targetx = startx + ndiffx * length;
+            var targety = starty + ndiffy * length;
+            var ray = rayTrace(startx, starty, targetx, targety, level);
+            var gx = mousePos.x;
+            var gy = mousePos.y;
+            if (ray) {
+                gx = ray.x;
+                gy = ray.y;
+            }
+            var grapplePos = { x: gx, y: gy };
+            if (isGrappling && (isPressing(KEY_CODES.lmb) || isPressing(KEY_CODES.rmb))) {
+                grapplePos = player.grappling;
+                console.log("here");
+            }
             isGrappling = false;
-            if (getFloorTypeAt(grapplePos.x, grapplePos.y) == "grappleBlock") {
+            if (getFloorTypeAt(grapplePos.x, grapplePos.y, level) == "grappleBlock") {
                 if (isPressing(KEY_CODES.lmb)) {
                     isGrappling = true;
                     var xpos = player.xpos;
@@ -103,15 +125,17 @@ function update() {
                     var centralBoostx = boostamount * ndx;
                     var centralBoosty = boostamount * ndy;
 
-                    player.xvel += centralBoostx;
-                    player.yvel += centralBoosty;
+                    if (distance(player.xvel + centralBoostx, player.yvel + centralBoosty) < maxspeed) {
+                        player.xvel += centralBoostx;
+                        player.yvel += centralBoosty;
+                    }
                 }
             }
-        }
-        if (isGrappling) {
-            player.grappling = getMousePos();
-        } else {
-            delete player.grappling;
+            if (isGrappling) {
+                player.grappling = grapplePos;
+            } else {
+                delete player.grappling;
+            }
         }
         //TODO SOME SORT OF COOLDOWN
         if (inventory.primary != "") {
@@ -162,40 +186,57 @@ function update() {
     }
 
     //Engineer
-    var maxspeed = 0;
     if (character == "engineer") {
         if (inventory.movement != "") {
+            var accel = 0.2;
             if (isPressing(KEY_CODES.up)) {
-                player.yvel -= 0.1;
+                if (distance(player.xvel, player.yvel - accel) < maxspeed) {
+                    player.yvel -= accel;
+                }
             }
             if (isPressing(KEY_CODES.down)) {
-                player.yvel += 0.1;
+                if (distance(player.xvel, player.yvel + accel) < maxspeed) {
+                    player.yvel += accel;
+                }
             }
             if (isPressing(KEY_CODES.right)) {
-                player.xvel += 0.1;
+                if (distance(player.xvel + accel, player.yvel) < maxspeed) {
+                    player.xvel += accel;
+                }
             }
             if (isPressing(KEY_CODES.left)) {
-                player.xvel -= 0.1;
+                if (distance(player.xvel - accel, player.yvel) < maxspeed) {
+                    player.xvel -= accel;
+                }
             }
         }
     }
     if (character == "fighter") {
         if (inventory.movement != "") {
             var ismoving = false;
+            var accel = 0.2;
             if (isPressing(KEY_CODES.up)) {
-                player.yvel -= 0.1;
+                if (distance(player.xvel, player.yvel - accel) < maxspeed) {
+                    player.yvel -= accel;
+                }
                 ismoving = true;
             }
             if (isPressing(KEY_CODES.down)) {
-                player.yvel += 0.1;
+                if (distance(player.xvel, player.yvel + accel) < maxspeed) {
+                    player.yvel += accel;
+                }
                 ismoving = true;
             }
             if (isPressing(KEY_CODES.right)) {
-                player.xvel += 0.1;
+                if (distance(player.xvel + accel, player.yvel) < maxspeed) {
+                    player.xvel += accel;
+                }
                 ismoving = true;
             }
             if (isPressing(KEY_CODES.left)) {
-                player.xvel -= 0.1;
+                if (distance(player.xvel - accel, player.yvel) < maxspeed) {
+                    player.xvel -= accel;
+                }
                 ismoving = true;
             }
             if (!ismoving) {
@@ -209,20 +250,20 @@ function update() {
     var possx = player.xpos + player.xvel;
     var possy = player.ypos + player.yvel;
 
-    if (collisionCheck(possx, possy)) {
+    if (collisionCheck(possx, possy, level)) {
         player.xpos = possx;
         player.ypos = possy;
     } else {
         possx = player.xpos + player.xvel;
         possy = player.ypos;
-        if (collisionCheck(possx, possy)) {
+        if (collisionCheck(possx, possy, level)) {
             player.xpos = possx;
             player.ypos = possy;
             player.yvel = -player.yvel;
         } else {
             possx = player.xpos;
             possy = player.ypos + player.yvel;
-            if (collisionCheck(possx, possy)) {
+            if (collisionCheck(possx, possy, level)) {
                 player.xpos = possx;
                 player.ypos = possy;
                 player.xvel = -player.xvel;
@@ -234,11 +275,17 @@ function update() {
             }
         }
     }
-    if (getFloorTypeAt(player.xpos, player.ypos) == "field") {
-        player.xvel *= 0.8;
-        player.yvel *= 0.8;
+    var friction = 1;
+    if (getFloorTypeAt(player.xpos, player.ypos, level) == "field") {
+        friction = 0.8;
+    } else if (getFloorTypeAt(player.xpos, player.ypos, level) == "ice") {
+        friction = 0.999;
+    } else {
+        friction = 0.99;
     }
 
+    player.xvel *= friction;
+    player.yvel *= friction;
 
 
     if (isPressing(KEY_CODES.one)) {
@@ -448,24 +495,4 @@ function otherPlayers() {
 
 function physics() {
 
-}
-
-
-function collisionCheck(possx, possy) {
-    //TODO
-    if (possx && possy) {
-        var terrain = getFloorAt(possx, possy);
-        if (terrain !== undefined) {
-            var type = terrain.type;
-            if (type == "solid") {
-                return false;
-            }
-            if (type == "door") {
-                if (terrain.locked) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
 }

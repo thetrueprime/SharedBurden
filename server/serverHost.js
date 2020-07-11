@@ -2,6 +2,7 @@ var http = require('http');
 var url = require('url');
 var fs = require('fs');
 var imports = require('./serverLogic')
+var mapMaker = require('../map')
 
 var WebSocketServer = require('websocket').server;
 
@@ -95,6 +96,7 @@ function hostServer() {
 }
 
 var world = { map: { type: "map", xpos: 0, ypos: 0, mapcontent: imports.generateMap() } };
+var localMap = mapMaker.buildLocalLevel(world.map.mapcontent);
 
 var connectionsPlayers = {};
 
@@ -126,7 +128,7 @@ function countProps(obj) {
 
 function gameLoop() {
     //Game running
-    world = imports.mainLoop(world);
+    world = imports.mainLoop(world, localMap);
 }
 
 
