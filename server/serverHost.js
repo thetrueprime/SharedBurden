@@ -38,7 +38,7 @@ function hostServer() {
     wsServer.on('connect', function(connection) {
         console.log((new Date()) + " Connection accepted!");
         connections.push(connection);
-
+        var connectionid = connections.length - 1;
 
         // Handle the "message" event received over WebSocket. This
         // is a message sent by a client, and may be text to share with
@@ -62,9 +62,11 @@ function hostServer() {
                             if ("status" in object) {
                                 if (object.status == "removed") {
                                     delete world[object.uniqueID];
+                                    console.log("Deleting");
                                 }
                                 if (object.status == "alive") {
                                     world[object.uniqueID] = object;
+                                    console.log("Setting");
                                 }
                             }
 
@@ -75,8 +77,7 @@ function hostServer() {
                         worldInfluencePlayerObjects[msg.uniqueID] = objectsReceived;
                         delete msg.worldinfluence;
                     }
-
-                    connectionsPlayers[connection] = msg.uniqueID;
+                    connectionsPlayers[connectionid] = msg.uniqueID;
 
                     world[msg.uniqueID] = msg;
                 }
@@ -98,19 +99,21 @@ var world = {};
 var connectionsPlayers = {};
 
 function sendOutUpdates() {
+    var i = 0;
     for (var connection of connections) {
-        var playerId = connectionsPlayers[connection];
+        var playerId = connectionsPlayers[i];
         if (playerId) {
             var worldObjects = worldInfluencePlayerObjects[playerId];
             if (countProps(worldObjects)) {
                 var toSend = { type: "worldInfluenceAck", objects: worldObjects };
-                console.log("Sending");
+                console.log("Sending to " + playerId);
                 console.log(toSend);
                 connection.send(JSON.stringify(toSend));
                 delete worldInfluencePlayerObjects[playerId];
             }
         }
         connection.send(JSON.stringify(world));
+        i++
     }
     setTimeout(sendOutUpdates, 100);
 }

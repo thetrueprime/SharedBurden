@@ -52,6 +52,15 @@ function getQueryVariable(variable) {
     return (false);
 }
 
+
+function distance(dx, dy) {
+    return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+}
+
+function dist(sx, sy, ex, ey) {
+    return distance(ex - sx, ey - sy);
+}
+
 function getCurrentTime() {
     return Date.now();
 }

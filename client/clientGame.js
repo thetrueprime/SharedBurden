@@ -16,8 +16,9 @@ function establishConnection() {
 }
 
 function processMessage(msg) {
-    var type = msg.type;
-    if (type) {
+    if ("type" in msg) {
+        console.log(msg);
+        var type = msg.type;
         if (type == "worldInfluenceAck") {
             console.log("Received: ");
             console.log(msg);
@@ -30,9 +31,20 @@ function processMessage(msg) {
     } else {
         var tempworld = msg;
         tempworld[player.uniqueID] = player;
+        for (let worldID in tempworld) {
+            let object = tempworld[worldID];
+            let futurex = object.xpos;
+            let futurey = object.ypos;
+            if (worldID in world) {
+                let currentObj = world[worldID];
+                object.xpos = currentObj.xpos;
+                object.ypos = currentObj.ypos;
+                tempworld[worldID] = object;
+            }
+            futureNPositions[worldID] = { xpos: futurex, ypos: futurey };
+        }
         world = tempworld;
     }
-    //console.log(msg);
 }
 
 

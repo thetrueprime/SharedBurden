@@ -1,4 +1,32 @@
+var futureNPositions = {};
+
+
+
+
+
+
+
 function update() {
+    //network interp (lazy over 10 smoothing)
+    for (let worldID in world) {
+        if (worldID != player.uniqueID) {
+            let object = world[worldID];
+            let fx = object.xpos;
+            let fy = object.ypos;
+            let xpos = object.xpos;
+            let ypos = object.ypos;
+            if (worldID in futureNPositions) {
+                var fPos = futureNPositions[worldID];
+                fx = fPos.xpos;
+                fy = fPos.ypos;
+            }
+            var interp = 1 / 10;
+            var useX = (fx - xpos) * interp + xpos;
+            var useY = (fy - ypos) * interp + ypos;
+            object.xpos = useX;
+            object.ypos = useY;
+        }
+    }
     //game running
 
     ///MOVEMENT
@@ -116,8 +144,8 @@ function update() {
                 ismoving = true;
             }
             if (!ismoving) {
-                player.xvel = 0;
-                player.yvel = 0;
+                player.xvel *= 0.9;
+                player.yvel *= 0.9;
             }
         }
     }
@@ -143,7 +171,9 @@ function update() {
         chuck(3);
     }
 
-
+    if (isPressing(KEY_CODES.chuck)) {
+        pickup();
+    }
 
 
 
@@ -153,6 +183,76 @@ function update() {
     otherPlayers();
     physics();
     enemies();
+}
+
+
+function pickup() {
+    let toremove = "";
+    for (var worldID in world) {
+        var obj = world[worldID];
+        var type = obj.type;
+        if (type == "item") {
+            var thisDist = distance(obj.xpos, obj.ypos, player.xpos, player.ypos);
+            if (thisDist < 20) {
+                console.log("Attempt Pickup");
+                console.log(obj);
+                var objname = obj.uniqueID;
+                var cando = equipIfCan(objname);
+                if (cando) {
+                    console.log("Picked");
+                    obj.status = "removed";
+                    player.worldinfluence[obj.uniqueID] = obj;
+                }
+            }
+        }
+    }
+}
+
+function equipIfCan(objname) {
+    var inventory = player.inventory;
+    if (character == "chef") {
+        if (objname == "Jetpack") {
+            inventory.primary = objname;
+            return true;
+        }
+        if (objname == "Skates") {
+            inventory.secondary = objname;
+            return true;
+        }
+        if (objname == "Grapple") {
+            inventory.movement = objname;
+            return true;
+        }
+    }
+    if (character == "fighter") {
+        if (objname == "Jetpack") {
+            inventory.secondary = objname;
+            return true;
+        }
+        if (objname == "Skates") {
+            inventory.movement = objname;
+            return true;
+        }
+        if (objname == "Grapple") {
+            inventory.primary = objname;
+            return true;
+        }
+    }
+    if (character == "engineer") {
+        if (objname == "Jetpack") {
+            inventory.movement = objname;
+            return true;
+        }
+        if (objname == "Skates") {
+            inventory.primary = objname;
+            return true;
+        }
+        if (objname == "Grapple") {
+            inventory.secondary = objname;
+            return true;
+        }
+    }
+    return false;
 }
 
 function getPlayerFacing() {

@@ -4,9 +4,6 @@
 var prevPositions = {};
 
 
-
-
-
 function draw(interp) {
 
     for (let worldID in world) {

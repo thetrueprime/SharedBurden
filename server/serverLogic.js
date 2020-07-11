@@ -6,9 +6,15 @@ module.exports = {
             if (type == "player") {
 
             } else if (type == "item") {
-                obj.xpos = obj.xpos + obj.xvel;
-                obj.ypos = obj.ypos + obj.yvel;
-
+                var nextX = obj.xpos + obj.xvel;
+                var nextY = obj.ypos + obj.yvel;
+                if (nextX > 0 && nextX < 1000 && nextY > 0 && nextY < 1000) {
+                    obj.xpos = nextX;
+                    obj.ypos = nextY;
+                } else {
+                    obj.xvel = -obj.xvel;
+                    obj.yvel = -obj.yvel;
+                }
             } else if (type == "monster") {
 
             }
