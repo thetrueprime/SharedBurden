@@ -34,77 +34,78 @@ function update() {
     //CHEF
     if (character == "chef") {
         if (inventory.movement != "") {
+            var grapplePos = getMousePos();
             isGrappling = false;
-            if (isPressing(KEY_CODES.lmb)) {
-                isGrappling = true;
-                var grapplePos = getMousePos();
-                var xpos = player.xpos;
-                var ypos = player.ypos;
-                var xvel = player.xvel;
-                var yvel = player.yvel;
-                var dx = grapplePos.x - xpos;
-                var dy = grapplePos.y - ypos;
-                var idx = xpos - grapplePos.x;
-                var idy = ypos - grapplePos.y;
-                var ropeLength = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+            if (getFloorTypeAt(grapplePos.x, grapplePos.y) == "grappleBlock") {
+                if (isPressing(KEY_CODES.lmb)) {
+                    isGrappling = true;
+                    var xpos = player.xpos;
+                    var ypos = player.ypos;
+                    var xvel = player.xvel;
+                    var yvel = player.yvel;
+                    var dx = grapplePos.x - xpos;
+                    var dy = grapplePos.y - ypos;
+                    var idx = xpos - grapplePos.x;
+                    var idy = ypos - grapplePos.y;
+                    var ropeLength = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
 
-                var newX = xpos + xvel;
-                var newY = ypos + yvel;
-                var ndx = newX - grapplePos.x;
-                var ndy = newY - grapplePos.y;
+                    var newX = xpos + xvel;
+                    var newY = ypos + yvel;
+                    var ndx = newX - grapplePos.x;
+                    var ndy = newY - grapplePos.y;
 
-                var newRopeLength = Math.sqrt(Math.pow(ndx, 2) + Math.pow(ndy, 2));
-                if (newRopeLength < ropeLength) {
-                    //slack, nothing to do
-                } else {
-                    var speedOfPlayer = Math.sqrt(Math.pow(xvel, 2) + Math.pow(yvel, 2));
+                    var newRopeLength = Math.sqrt(Math.pow(ndx, 2) + Math.pow(ndy, 2));
+                    if (newRopeLength < ropeLength) {
+                        //slack, nothing to do
+                    } else {
+                        var speedOfPlayer = Math.sqrt(Math.pow(xvel, 2) + Math.pow(yvel, 2));
 
-                    var angleOfPlayer = Math.atan2(yvel, xvel);
+                        var angleOfPlayer = Math.atan2(yvel, xvel);
 
 
 
-                    var angleofGrappleRope = Math.atan2(dy, dx);
-                    if (angleofGrappleRope < 0) {
-                        angleofGrappleRope = Math.atan2(idy, idx);
+                        var angleofGrappleRope = Math.atan2(dy, dx);
+                        if (angleofGrappleRope < 0) {
+                            angleofGrappleRope = Math.atan2(idy, idx);
+                        }
+
+                        var angleofTravel = angleofGrappleRope + Math.PI / 2; //anti clockwise
+                        if (angleofTravel > Math.PI * 2) {
+                            angleofTravel = angleofTravel - Math.PI;
+                        }
+
+
+                        var difference = angleOfPlayer - angleofTravel;
+                        if (difference > Math.PI / 2) {
+                            difference = Math.PI - difference;
+                        }
+
+                        var speedinDirection = Math.cos(difference) * speedOfPlayer;
+
+                        player.xvel = speedinDirection * Math.cos(angleofTravel);
+                        player.yvel = speedinDirection * Math.sin(angleofTravel);
                     }
-
-                    var angleofTravel = angleofGrappleRope + Math.PI / 2; //anti clockwise
-                    if (angleofTravel > Math.PI * 2) {
-                        angleofTravel = angleofTravel - Math.PI;
-                    }
-
-
-                    var difference = angleOfPlayer - angleofTravel;
-                    if (difference > Math.PI / 2) {
-                        difference = Math.PI - difference;
-                    }
-
-                    var speedinDirection = Math.cos(difference) * speedOfPlayer;
-
-                    player.xvel = speedinDirection * Math.cos(angleofTravel);
-                    player.yvel = speedinDirection * Math.sin(angleofTravel);
                 }
-            }
 
-            if (isPressing(KEY_CODES.rmb)) {
-                isGrappling = true;
-                var grapplePos = getMousePos();
-                var xpos = player.xpos;
-                var ypos = player.ypos;
-                var xvel = player.xvel;
-                var yvel = player.yvel;
-                var dx = grapplePos.x - xpos;
-                var dy = grapplePos.y - ypos;
-                var ropeLength = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-                var ndx = dx / ropeLength;
-                var ndy = dy / ropeLength;
-                var boostamount = 1;
+                if (isPressing(KEY_CODES.rmb)) {
+                    isGrappling = true;
+                    var xpos = player.xpos;
+                    var ypos = player.ypos;
+                    var xvel = player.xvel;
+                    var yvel = player.yvel;
+                    var dx = grapplePos.x - xpos;
+                    var dy = grapplePos.y - ypos;
+                    var ropeLength = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+                    var ndx = dx / ropeLength;
+                    var ndy = dy / ropeLength;
+                    var boostamount = 1;
 
-                var centralBoostx = boostamount * ndx;
-                var centralBoosty = boostamount * ndy;
+                    var centralBoostx = boostamount * ndx;
+                    var centralBoosty = boostamount * ndy;
 
-                player.xvel += centralBoostx;
-                player.yvel += centralBoosty;
+                    player.xvel += centralBoostx;
+                    player.yvel += centralBoosty;
+                }
             }
         }
         if (isGrappling) {
@@ -211,6 +212,31 @@ function update() {
     if (collisionCheck(possx, possy)) {
         player.xpos = possx;
         player.ypos = possy;
+    } else {
+        possx = player.xpos + player.xvel;
+        possy = player.ypos;
+        if (collisionCheck(possx, possy)) {
+            player.xpos = possx;
+            player.ypos = possy;
+            player.yvel = -player.yvel;
+        } else {
+            possx = player.xpos;
+            possy = player.ypos + player.yvel;
+            if (collisionCheck(possx, possy)) {
+                player.xpos = possx;
+                player.ypos = possy;
+                player.xvel = -player.xvel;
+            } else {
+                possx = player.xpos;
+                possy = player.ypos;
+                player.xvel = -player.xvel;
+                player.yvel = -player.yvel;
+            }
+        }
+    }
+    if (getFloorTypeAt(player.xpos, player.ypos) == "field") {
+        player.xvel *= 0.8;
+        player.yvel *= 0.8;
     }
 
 
@@ -428,7 +454,20 @@ function physics() {
 function collisionCheck(possx, possy) {
     //TODO
     if (possx && possy) {
-        return true;
+        var terrain = getFloorAt(possx, possy);
+        if (terrain !== undefined) {
+            var type = terrain.type;
+            if (type == "solid") {
+                console.log("Colliding");
+                return false;
+            }
+            if (type == "door") {
+                if (terrain.locked) {
+                    console.log("Colliding");
+                    return false;
+                }
+            }
+        }
     }
     return true;
 }

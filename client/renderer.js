@@ -12,9 +12,66 @@ function displayMessage(message) {
 }
 
 
+function drawTerrain() {
+    for (floorID in level) {
+        var flooring = level[floorID];
+        var type = flooring.type;
+        if (type == "field") {
+            ctx.fillStyle = "#35654d";
+        }
+        ctx.fillRect(flooring.x, flooring.y, flooring.w, flooring.h);
+    }
+}
+
+
+var loadedTextures = {};
+
+var texturesToLoad = [
+    { src: "images/first.png", key: "Swords" },
+    { src: "images/gamejam_skates_pink.png", key: "Skates" }
+]
+
+function loadImages() {
+    for (let imageData of texturesToLoad) {
+        let img = new Image();
+        img.src = imageData.src;
+        img.onload = function() {
+            loadedTextures[imageData.key] = img;
+            console.log("Loaded " + imageData.key);
+        }
+    }
+}
+loadImages();
+
+var scale = 2;
 
 function draw(interp) {
+    ctx.restore();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    var camerax = player.xpos;
+    var cameray = player.ypos; {
+        let object = world[player.uniqueID];
+        let prevx = object.xpos;
+        let prevy = object.ypos;
+        let xpos = object.xpos;
+        let ypos = object.ypos;
+        if (player.uniqueID in prevPositions) {
+            var prevPos = prevPositions[player.uniqueID];
+            prevx = prevPos.xpos;
+            prevy = prevPos.ypos;
+        }
+        camerax = (xpos - prevx) * interp + prevx;
+        cameray = (ypos - prevy) * interp + prevy;
+    }
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.scale(scale, scale);
+    ctx.translate(-camerax, -cameray);
+
+    drawTerrain();
+
+
+
     for (let worldID in world) {
         let object = world[worldID];
         let prevx = object.xpos;
@@ -45,15 +102,42 @@ function draw(interp) {
             }
             if (inv.primary != "") {
                 ctx.fillStyle = "#9400D3";
-                ctx.fillRect(useX - 4, useY - 10, 10, 10);
+                ctx.fillRect(useX - 18, useY - 20, 20, 20);
+                textureName = inv.primary;
+                if (textureName in loadedTextures) {
+                    ctx.drawImage(loadedTextures[textureName], useX - 18, useY - 20, 20, 20);
+                }
+            } else {
+                ctx.strokeStyle = "#9400D3";
+                ctx.beginPath();
+                ctx.rect(useX - 18, useY - 20, 20, 20);
+                ctx.stroke();
             }
             if (inv.secondary != "") {
                 ctx.fillStyle = "#9400D3";
-                ctx.fillRect(useX + 7, useY - 10, 10, 10);
+                ctx.fillRect(useX + 2, useY - 20, 20, 20);
+                textureName = inv.secondary;
+                if (textureName in loadedTextures) {
+                    ctx.drawImage(loadedTextures[textureName], useX + 2, useY - 20, 20, 20);
+                }
+            } else {
+                ctx.strokeStyle = "#9400D3";
+                ctx.beginPath();
+                ctx.rect(useX + 2, useY - 20, 20, 20);
+                ctx.stroke();
             }
             if (inv.movement != "") {
                 ctx.fillStyle = "#9400D3";
-                ctx.fillRect(useX + 18, useY - 10, 10, 10);
+                ctx.fillRect(useX + 24, useY - 20, 20, 20);
+                textureName = inv.movement;
+                if (textureName in loadedTextures) {
+                    ctx.drawImage(loadedTextures[textureName], useX + 24, useY - 20, 20, 20);
+                }
+            } else {
+                ctx.strokeStyle = "#9400D3";
+                ctx.beginPath();
+                ctx.rect(useX + 24, useY - 20, 20, 20);
+                ctx.stroke();
             }
             if (playerclass == "chef") {
                 if ("grappling" in object) {
@@ -88,6 +172,9 @@ function draw(interp) {
         } else if (object.type == "food") {
             ctx.fillStyle = "#66FF66";
             ctx.fillRect(useX, useY, 8, 8);
+        } else if (object.type == "monster") {
+            ctx.fillStyle = "#FCFC1D";
+            ctx.fillRect(useX, useY, 50, 50);
         }
         if ("animations" in object) {
             var anim = object.animations;

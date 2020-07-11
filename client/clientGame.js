@@ -43,6 +43,13 @@ function processMessage(msg) {
             }
             futureNPositions[worldID] = { xpos: futurex, ypos: futurey };
         }
+        if ("map" in tempworld) {
+            if (!levelGenned) {
+                console.log("map:");
+                console.log(tempworld.map);
+                level = generateLevel(tempworld.map.mapcontent);
+            }
+        }
         world = tempworld;
     }
 }

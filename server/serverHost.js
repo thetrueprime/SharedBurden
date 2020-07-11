@@ -94,7 +94,7 @@ function hostServer() {
     });
 }
 
-var world = {};
+var world = { map: { type: "map", xpos: 0, ypos: 0, mapcontent: imports.generateMap() } };
 
 var connectionsPlayers = {};
 

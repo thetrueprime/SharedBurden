@@ -3,6 +3,7 @@ var ctx;
 var canvas;
 canvas = document.getElementById("canvas");
 ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
 
 //Networking
 var serverIP = "localhost"
@@ -36,6 +37,8 @@ var maxhealth = 100;
 //instance
 var player = newPlayer();
 var world = {};
+var level = {};
+
 
 
 
@@ -43,6 +46,17 @@ var world = {};
 function randColor() {
     return "#" + Math.floor(Math.random() * 16777215).toString(16);
 }
+
+function randID() {
+    return "#" + Math.floor(Math.random() * 16777215) + getCurrentTime();
+}
+
+function chance(over, amount) {
+    var random = Math.random;
+    var option = Math.round((random / over) * amount);
+    return option;
+}
+
 
 function getQueryVariable(variable) {
     var query = window.location.search.substring(1);
