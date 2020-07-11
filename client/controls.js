@@ -35,9 +35,16 @@ var mx, my = 0;
 
 
 function getMousePos() {
+    var canvasMX = mx;
+    var canvasMY = my;
+    var diffMidX = canvasMX - canvas.width / 2;
+    var diffMidY = canvasMY - canvas.height / 2;
+    var scaledDiffMidX = diffMidX / scale;
+    var scaledDiffMidY = diffMidY / scale;
+    var newPosX = camerax + scaledDiffMidX;
+    var newPosY = cameray + scaledDiffMidY;
 
-
-    return { x: mx, y: my };
+    return { x: newPosX, y: newPosY };
 }
 
 document.body.addEventListener('keydown', (event) => {

@@ -113,8 +113,35 @@ function generateRoom(type, startx, starty, width, height, roomData) {
             type: "door"
         }
     }
-    //gen top wall
     var wallthick = 20;
+    room["topgrapple"] = {
+        x: startx,
+        y: starty,
+        w: wallthick * 2,
+        h: wallthick * 2,
+        type: "grappleBlock"
+    }
+    room["rightgrapple"] = {
+        x: startx + width - wallthick * 2,
+        y: starty,
+        w: wallthick * 2,
+        h: wallthick * 2,
+        type: "grappleBlock"
+    }
+    room["bottomgrapple"] = {
+        x: startx + width - wallthick * 2,
+        y: starty + height - wallthick * 2,
+        w: wallthick * 2,
+        h: wallthick * 2,
+        type: "grappleBlock"
+    }
+    room["leftgrapple"] = {
+        x: startx,
+        y: starty + height - wallthick * 2,
+        w: wallthick * 2,
+        h: wallthick * 2,
+        type: "grappleBlock"
+    }
     room["topWall"] = {
         x: startx,
         y: starty,
@@ -150,20 +177,36 @@ function generateRoom(type, startx, starty, width, height, roomData) {
 
 
 function getFloorTypeAt(x, y) {
+    var allType = [];
     for (floorID in level) {
         var flooring = level[floorID];
         var type = flooring.type;
         if (flooring.x < x && flooring.x + flooring.w > x && flooring.y < y && flooring.y + flooring.h > y) {
+            allType.push(type);
             return type;
         }
     }
 }
 
 function getFloorAt(x, y) {
+    var allFloor = [];
     for (floorID in level) {
         var flooring = level[floorID];
         if (flooring.x < x && flooring.x + flooring.w > x && flooring.y < y && flooring.y + flooring.h > y) {
-            return flooring;
+            allFloor.push(flooring);
         }
+    }
+    for (var i = 0; i < allFloor.length; i++) {
+        if (allFloor[i].type == "door") {
+            return allFloor[i];
+        }
+    }
+    for (var i = 0; i < allFloor.length; i++) {
+        if (allFloor[i].type == "solid") {
+            return allFloor[i];
+        }
+    }
+    if (allFloor.length > 0) {
+        return allFloor[0];
     }
 }

@@ -45,11 +45,12 @@ loadImages();
 
 var scale = 2;
 
+var camerax = 0;
+var cameray = 0;
+
 function draw(interp) {
     ctx.restore();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    var camerax = player.xpos;
-    var cameray = player.ypos; {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); {
         let object = world[player.uniqueID];
         let prevx = object.xpos;
         let prevy = object.ypos;
@@ -168,7 +169,11 @@ function draw(interp) {
 
         } else if (object.type == "item") {
             ctx.fillStyle = "#FFA500";
-            ctx.fillRect(useX, useY, 5, 5);
+            ctx.fillRect(useX, useY, 15, 15);
+            textureName = object.uniqueID;
+            if (textureName in loadedTextures) {
+                ctx.drawImage(loadedTextures[textureName], useX, useY, 15, 15);
+            }
         } else if (object.type == "food") {
             ctx.fillStyle = "#66FF66";
             ctx.fillRect(useX, useY, 8, 8);

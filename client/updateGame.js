@@ -458,12 +458,10 @@ function collisionCheck(possx, possy) {
         if (terrain !== undefined) {
             var type = terrain.type;
             if (type == "solid") {
-                console.log("Colliding");
                 return false;
             }
             if (type == "door") {
                 if (terrain.locked) {
-                    console.log("Colliding");
                     return false;
                 }
             }
