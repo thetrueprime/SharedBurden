@@ -4,7 +4,7 @@ var futureNPositions = {};
 
 
 
-
+var isGrappling = false;
 
 function update() {
     //network interp (lazy over 10 smoothing)
@@ -34,7 +34,9 @@ function update() {
     //CHEF
     if (character == "chef") {
         if (inventory.movement != "") {
+            isGrappling = false;
             if (isPressing(KEY_CODES.lmb)) {
+                isGrappling = true;
                 var grapplePos = getMousePos();
                 var xpos = player.xpos;
                 var ypos = player.ypos;
@@ -85,6 +87,7 @@ function update() {
             }
 
             if (isPressing(KEY_CODES.rmb)) {
+                isGrappling = true;
                 var grapplePos = getMousePos();
                 var xpos = player.xpos;
                 var ypos = player.ypos;
@@ -102,6 +105,57 @@ function update() {
 
                 player.xvel += centralBoostx;
                 player.yvel += centralBoosty;
+            }
+        }
+        if (isGrappling) {
+            player.grappling = getMousePos();
+        } else {
+            delete player.grappling;
+        }
+        //TODO SOME SORT OF COOLDOWN
+        if (inventory.primary != "") {
+            if (isPressing(KEY_CODES.primary)) {
+                var items = player.inventory.items;
+                if (items.length <= 0) {
+                    displayMessage("You don't have any food to cook!")
+                } else {
+                    var toremove = -1;
+                    for (let itemid in items) {
+                        var item = items[itemid];
+                        if (item.type == "food") {
+                            if (!item.cooked && item.chopped) {
+                                displayMessage("Cooking Food!");
+                                item.cooked = true;
+                                chuckFood(item.name);
+                                toremove = itemid;
+                                playAnim("cooking");
+                                break;
+                            }
+                        }
+                    }
+                    if (toremove > -1) {
+                        items.splice(toremove, 1);
+                    }
+                }
+            }
+        }
+        if (inventory.secondary != "") {
+            if (isPressing(KEY_CODES.secondary)) {
+                var items = player.inventory.items;
+                if (items.length <= 0) {
+                    displayMessage("You don't have any food to chop!")
+                } else {
+                    for (let item of items) {
+                        if (item.type == "food") {
+                            if (!item.cooked && !item.chopped) {
+                                displayMessage("Chopping Food!");
+                                item.chopped = true;
+                                playAnim("chopping");
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -186,14 +240,51 @@ function update() {
 }
 
 
+function playAnim(animname) {
+    if (animname == "chopping") {
+        var animationObj = {
+            name: animname,
+            current: 0,
+            max: 120,
+            loop: false,
+        }
+        player.animations = animationObj;
+    } else if (animname == "cooking") {
+        var animationObj = {
+            name: animname,
+            current: 0,
+            max: 1200,
+            loop: false,
+        }
+        player.animations = animationObj;
+    }
+
+
+}
+
+
+
+
+
+function chuckFood(foodname) {
+    var x = player.xpos;
+    var y = player.ypos;
+    var facing = getPlayerFacing();
+    var xv = facing.x;
+    var yv = facing.y;
+    console.log("Chucking Food");
+    let thrownitem = { uniqueID: foodname, type: "food", status: "alive", xpos: x, ypos: y, xvel: xv + player.xvel, yvel: yv + player.yvel };
+    player.worldinfluence[foodname] = thrownitem;
+}
+
 function pickup() {
     let toremove = "";
     for (var worldID in world) {
         var obj = world[worldID];
         var type = obj.type;
         if (type == "item") {
-            var thisDist = distance(obj.xpos, obj.ypos, player.xpos, player.ypos);
-            if (thisDist < 20) {
+            var thisDist = dist(obj.xpos, obj.ypos, player.xpos, player.ypos);
+            if (thisDist < 35) {
                 console.log("Attempt Pickup");
                 console.log(obj);
                 var objname = obj.uniqueID;
@@ -205,6 +296,27 @@ function pickup() {
                 }
             }
         }
+        if (type == "food") {
+            var thisDist = dist(obj.xpos, obj.ypos, player.xpos, player.ypos);
+            if (thisDist < 35) {
+                console.log("Attempt Pickup");
+                console.log(obj);
+                var objname = obj.uniqueID;
+                var cando = eat(objname);
+                if (cando) {
+                    console.log("ate");
+                    obj.status = "removed";
+                    player.worldinfluence[obj.uniqueID] = obj;
+                }
+            }
+        }
+    }
+}
+
+function eat(objname) {
+    player.health += 50;
+    if (player.health > 100) {
+        player.health = 100;
     }
 }
 
@@ -278,7 +390,7 @@ function chuck(slotnumber) {
     if (slotnumber == 1) {
         if (inventory.primary != "") {
             console.log("Chucking " + slotnumber);
-            let thrownitem = { uniqueID: inventory.primary, type: "item", status: "alive", xpos: x, ypos: y, xvel: xv, yvel: yv };
+            let thrownitem = { uniqueID: inventory.primary, type: "item", status: "alive", xpos: x, ypos: y, xvel: xv + player.xvel, yvel: yv + player.yvel };
             player.worldinfluence[inventory.primary] = thrownitem;
             inventory.primary = "";
         }
@@ -286,7 +398,7 @@ function chuck(slotnumber) {
     if (slotnumber == 2) {
         if (inventory.secondary != "") {
             console.log("Chucking " + slotnumber);
-            let thrownitem = { uniqueID: inventory.secondary, type: "item", status: "alive", xpos: x, ypos: y, xvel: xv, yvel: yv };
+            let thrownitem = { uniqueID: inventory.secondary, type: "item", status: "alive", xpos: x, ypos: y, xvel: xv + player.xvel, yvel: yv + player.yvel };
             player.worldinfluence[inventory.secondary] = thrownitem;
             inventory.secondary = "";
         }
@@ -294,7 +406,7 @@ function chuck(slotnumber) {
     if (slotnumber == 3) {
         if (inventory.movement != "") {
             console.log("Chucking " + slotnumber);
-            let thrownitem = { uniqueID: inventory.movement, type: "item", status: "alive", xpos: x, ypos: y, xvel: xv, yvel: yv };
+            let thrownitem = { uniqueID: inventory.movement, type: "item", status: "alive", xpos: x, ypos: y, xvel: xv + player.xvel, yvel: yv + player.yvel };
             player.worldinfluence[inventory.movement] = thrownitem;
             inventory.movement = "";
         }

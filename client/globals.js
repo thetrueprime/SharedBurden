@@ -30,10 +30,12 @@ var TICKS_PER_SECOND = 20;
 var SKIP_TICKS = 1000 / TICKS_PER_SECOND;
 
 
+//constants
+var maxhealth = 100;
+
 //instance
 var player = newPlayer();
 var world = {};
-
 
 
 

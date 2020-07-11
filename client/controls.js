@@ -8,7 +8,9 @@ var KEY_CODES = {
     two: "Digit2",
     three: "Digit3",
     lmb: "M0",
-    rmb: "M2"
+    rmb: "M2",
+    primary: "KeyE",
+    secondary: "KeyQ"
 }
 
 function isPressing(code) {
@@ -27,6 +29,8 @@ keys.set(KEY_CODES.two, false)
 keys.set(KEY_CODES.three, false)
 keys.set(KEY_CODES.rmb, false)
 keys.set(KEY_CODES.lmb, false)
+keys.set(KEY_CODES.primary, false)
+keys.set(KEY_CODES.secondary, false)
 var mx, my = 0;
 
 

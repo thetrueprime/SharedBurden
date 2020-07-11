@@ -9,6 +9,7 @@ function newPlayer() {
     var thisPlayer = {
         uniqueID: localUsername,
         type: "player",
+        health: 100,
         xpos: 0,
         ypos: 0,
         xvel: 0,
@@ -17,7 +18,14 @@ function newPlayer() {
         inventory: {
             primary: "",
             secondary: "",
-            movement: movementAbility
+            movement: movementAbility,
+            items: []
+        },
+        animations: {
+            name: "",
+            current: 0,
+            max: 0,
+            loop: true,
         },
         worldinfluence: {}
     }
