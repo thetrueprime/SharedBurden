@@ -76,7 +76,7 @@ class TerrainManager {
 
 }
 
-var floor = new TerrainManager('images/gamejam_room2.png')
+var floor = new TerrainManager('client/images/gamejam_room2.png')
 floor.type = "full";
 floor.tileWidth = 128;
 
@@ -92,6 +92,13 @@ function drawTerrain() {
             ctx.fillStyle = "#654321";
             if ("crate" in loadedTextures) {
                 ctx.drawImage(loadedTextures["crate"], flooring.x, flooring.y, flooring.w, flooring.h);
+                draw = false;
+            }
+        }
+        if (type == "button") {
+            ctx.fillStyle = "#654321";
+            if ("button" in loadedTextures) {
+                ctx.drawImage(loadedTextures["button"], flooring.x - flooring.w * 0.5, flooring.y, flooring.w * 2, flooring.h * 2);
                 draw = false;
             }
         }
@@ -163,23 +170,24 @@ function drawTerrain() {
 var loadedTextures = {};
 
 var texturesToLoad = [
-    { src: "images/first.png", key: "Swords" },
-    { src: "images/gamejam_skates_pink.png", key: "Skates" },
-    { src: "images/gamejam_jetpack.png", key: "Jetpack" },
-    { src: "images/gamejam_grapplinghook.png", key: "Grapple" },
-    { src: "images/flame_step_1.png", key: "fire" },
-    { src: "images/gamejam_chest_locked.png", key: "chest" },
-    { src: "images/gamejam_chest_unlocked2.png", key: "unlockedChest" },
-    { src: "images/key2.png", key: "key" },
-    { src: "images/leg.png", key: "food" },
-    { src: "images/leg_cooked.png", key: "food_cooked" },
-    { src: "images/zawmbie_trans.png", key: "zombie" },
-    { src: "images/cheff.png", key: "chef" },
-    { src: "images/heavcr.png", key: "fighter" },
-    { src: "images/asssy.png", key: "engineer" },
-    { src: "images/gateuse3.png", key: "gate" },
-    { src: "images/barrel2.png", key: "cube" },
-    { src: "images/crate.png", key: "crate" },
+    { src: "client/images/first.png", key: "Swords" },
+    { src: "client/images/gamejam_skates_pink.png", key: "Skates" },
+    { src: "client/images/gamejam_jetpack.png", key: "Jetpack" },
+    { src: "client/images/gamejam_grapplinghook.png", key: "Grapple" },
+    { src: "client/images/flame_step_1.png", key: "fire" },
+    { src: "client/images/gamejam_chest_locked.png", key: "chest" },
+    { src: "client/images/gamejam_chest_unlocked2.png", key: "unlockedChest" },
+    { src: "client/images/key2.png", key: "key" },
+    { src: "client/images/leg.png", key: "food" },
+    { src: "client/images/leg_cooked.png", key: "food_cooked" },
+    { src: "client/images/zawmbie_trans.png", key: "zombie" },
+    { src: "client/images/cheff.png", key: "chef" },
+    { src: "client/images/heavcr.png", key: "fighter" },
+    { src: "client/images/asssy.png", key: "engineer" },
+    { src: "client/images/gateuse3.png", key: "gate" },
+    { src: "client/images/barrel2.png", key: "cube" },
+    { src: "client/images/crate.png", key: "crate" },
+    { src: "client/images/barrelhole.png", key: "button" },
 ]
 
 function loadImages() {
