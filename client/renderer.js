@@ -102,6 +102,13 @@ function drawTerrain() {
                 draw = false;
             }
         }
+        if (type == "dispenser") {
+            ctx.fillStyle = "#654321";
+            if ("dispenser" in loadedTextures) {
+                ctx.drawImage(loadedTextures["dispenser"], flooring.x - flooring.w * 0.5, flooring.y, flooring.w * 2, flooring.h * 2);
+                draw = false;
+            }
+        }
         if (type == "solid") {
             ctx.fillStyle = "#808000";
             draw = false;
@@ -188,6 +195,7 @@ var texturesToLoad = [
     { src: "client/images/barrel2.png", key: "cube" },
     { src: "client/images/crate.png", key: "crate" },
     { src: "client/images/barrelhole.png", key: "button" },
+    { src: "client/images/barreldispense.png", key: "dispenser" },
 ]
 
 function loadImages() {
