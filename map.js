@@ -3,8 +3,8 @@ module.exports = {
     buildLocalLevel: function(MapData) {
         return generateLevel(MapData);
     },
-    collisionCheck: function(possx, possy, locallevel) {
-        return collisionCheck(possx, possy, locallevel);
+    collisionCheck: function(possx, possy, locallevel, ignoredoors) {
+        return collisionCheck(possx, possy, locallevel, ignoredoors);
     }
 };
 
@@ -39,8 +39,8 @@ function generateLevel(MapData) {
 }
 
 function generateRoom(type, startx, starty, width, height, roomData) {
-    var doorthick = 32;
-    var wallthick = 16;
+    var doorthick = 64;
+    var wallthick = 64;
 
 
     var room = {};
@@ -118,6 +118,16 @@ function generateRoom(type, startx, starty, width, height, roomData) {
             w: width / 5,
             h: height / 5,
             type: "grappleBlock"
+        }
+    }
+    if (type == "enemy") {
+        room["central"] = {
+            x: startx + width / 2,
+            y: starty + height / 2,
+            w: width / 5,
+            h: height / 5,
+            type: "spawner",
+            spawnType: "food"
         }
     }
     if (roomData.left) {
@@ -304,7 +314,7 @@ function getFloorAt(x, y, level) {
 }
 
 
-function collisionCheck(possx, possy, level) {
+function collisionCheck(possx, possy, level, ignoredoors) {
     //TODO
     if (possx && possy) {
         var terrain = getFloorAt(possx, possy, level);
@@ -313,9 +323,11 @@ function collisionCheck(possx, possy, level) {
             if (type == "solid") {
                 return false;
             }
-            if (type == "door") {
-                if (terrain.locked) {
-                    return false;
+            if (ignoredoors !== undefined) {} else {
+                if (type == "door") {
+                    if (terrain.locked) {
+                        return false;
+                    }
                 }
             }
         }

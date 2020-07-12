@@ -76,7 +76,7 @@ class TerrainManager {
 
 }
 
-var floor = new TerrainManager('images/tempfloor.png')
+var floor = new TerrainManager('images/gamejam_room.png')
 floor.type = "full";
 floor.tileWidth = 128;
 
@@ -84,6 +84,7 @@ function drawTerrain() {
     for (floorID in level) {
         var flooring = level[floorID];
         var type = flooring.type;
+        var draw = true;
         if (type == "field") {
             ctx.fillStyle = "#35654d";
         }
@@ -99,10 +100,11 @@ function drawTerrain() {
         }
         if (type == "solid") {
             ctx.fillStyle = "#808000";
+            draw = false;
         }
-        ctx.fillRect(flooring.x, flooring.y, flooring.w, flooring.h);
+        if (draw) ctx.fillRect(flooring.x, flooring.y, flooring.w, flooring.h);
         if (type == "cobblefloor") {
-            floor.drawTilesImage(ctx, flooring.x, flooring.y, flooring.w, flooring.h, 2);
+            floor.drawTilesImage(ctx, flooring.x, flooring.y, flooring.w, flooring.h, 0.25);
         }
     }
 }
@@ -114,7 +116,8 @@ var texturesToLoad = [
     { src: "images/first.png", key: "Swords" },
     { src: "images/gamejam_skates_pink.png", key: "Skates" },
     { src: "images/gamejam_jetpack.png", key: "Jetpack" },
-    { src: "images/gamejam_grapplinghook.png", key: "Grapple" }
+    { src: "images/gamejam_grapplinghook.png", key: "Grapple" },
+    { src: "images/flame_step_1.png", key: "fire" }
 ]
 
 function loadImages() {
@@ -242,15 +245,25 @@ function draw(interp) {
                 }
                 ctx.font = "12px Calibri";
                 ctx.fillStyle = "#00FF00";
-                var carryingFood = player.inventory.items.length + " food";
+                var carryingFood = countItem(player.inventory.items, "food") + " food";
                 var messagemeasurement = ctx.measureText(carryingFood);
                 ctx.fillText(carryingFood, useX + 12 - messagemeasurement.width / 2, useY + 26 + 12);
                 ctx.fillStyle = "#00FF00";
             }
             if (playerclass == "engineer") {
+                ctx.font = "12px Calibri";
+                ctx.fillStyle = "#00FF00";
+                var carryingFood = countItem(player.inventory.items, "metal") + " metal";
+                var messagemeasurement = ctx.measureText(carryingFood);
+                ctx.fillText(carryingFood, useX + 12 - messagemeasurement.width / 2, useY + 26 + 12);
                 ctx.fillStyle = "#0000FF";
             }
             if (playerclass == "fighter") {
+                ctx.font = "12px Calibri";
+                ctx.fillStyle = "#00FF00";
+                var carryingFood = countItem(player.inventory.items, "key") + " key";
+                var messagemeasurement = ctx.measureText(carryingFood);
+                ctx.fillText(carryingFood, useX + 12 - messagemeasurement.width / 2, useY + 26 + 12);
                 ctx.fillStyle = "#FF0000";
             }
             ctx.fillRect(useX, useY, 24, 24);
@@ -294,17 +307,58 @@ function draw(interp) {
                     };
                 }
             }
-            displayAnimation(n, c / max, useX, useY);
+            var facingX = 0;
+            var facingY = 0;
+            if ("facing" in anim) {
+                facingX = anim.facing.x;
+                facingY = anim.facing.y;
+            }
+            displayAnimation(n, c / max, useX, useY, facingX, facingY);
             object.animations = anim;
         }
     }
+    drawParticles();
     mouspos = getMousePos();
     ctx.fillStyle = "#000000";
     ctx.fillRect(mouspos.x, mouspos.y, 1, 1);
 }
 
+function countItem(items, typeofthing) {
+    var tally = 0;
+    for (let item of items) {
+        if (item.type == typeofthing) {
+            tally++;
+        }
+    }
+    return tally;
+}
 
-function displayAnimation(animName, progress, x, y) {
+let particles = {};
+
+function drawParticles() {
+    let toremove = [];
+    for (let particleID in particles) {
+        let particle = particles[particleID];
+        let imageName = particle.imageName;
+        if (imageName == "fire") {
+            ctx.save();
+            ctx.drawImage(loadedTextures["fire"], particle.x, particle.y, 16, 16);
+            ctx.restore();
+        }
+        particle.x += particle.xv;
+        particle.y += particle.yv;
+        particle.timeremaining--;
+        if (particle.timeremaining < 0) {
+            toremove.push(particle.uniqueID);
+        }
+        particles[particleID] = particle;
+    }
+    for (let removeID of toremove) {
+        delete particles[removeID];
+    }
+}
+
+function displayAnimation(animName, progress, x, y, fx, fy) {
     if (animName == "chopping") {
         ctx.save();
         ctx.translate(x, y);
@@ -315,16 +369,52 @@ function displayAnimation(animName, progress, x, y) {
     }
     if (animName == "cooking") {
         ctx.save();
-        var grd = ctx.createRadialGradient(x, y, progress * 50, x, y, 50);
-        grd.addColorStop(0, "#FFA500");
-        grd.addColorStop(1, "white");
+        if (Math.round(progress * 120) % 20 == 0) {
+            var maxcircle = 20;
+            for (var i = 0; i < maxcircle; i++) {
+                var angle = i / maxcircle * Math.PI * 2;
+                var newID = randID();
+                var randSpeed = 0.5;
+                var vx = Math.cos(angle) * randSpeed;
+                var vy = Math.sin(angle) * randSpeed;
 
-        // Fill with gradient
-        ctx.fillStyle = grd;
-        ctx.moveTo(x, y);
-        ctx.beginPath();
-        ctx.arc(x, y, 50, 0, Math.PI * 2);
-        ctx.fill();
+                particles[newID] = {
+                    uniqueID: newID,
+                    imageName: "fire",
+                    x: x,
+                    y: y,
+                    xv: vx,
+                    yv: vy,
+                    timeremaining: 100
+                }
+            }
+        }
+        ctx.restore();
+
+    }
+    if (animName == "fire") {
+        ctx.save();
+        for (var i = 0; i < 5; i++) {
+            var newID = randID();
+            var randSpeed = Math.random();
+            var vx = fx * randSpeed;
+            var vy = fy * randSpeed;
+            var angle = Math.atan2(vy, vx);
+            var randomangle = Math.PI / 6;
+            angle = angle + (Math.random() - 0.5) * randomangle;
+            vx = randSpeed * Math.cos(angle);
+            vy = randSpeed * Math.sin(angle);
+
+            particles[newID] = {
+                uniqueID: newID,
+                imageName: "fire",
+                x: x,
+                y: y,
+                xv: vx,
+                yv: vy,
+                timeremaining: 100
+            }
+        }
         ctx.restore();
     }
 }

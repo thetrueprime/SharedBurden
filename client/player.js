@@ -23,7 +23,7 @@ function newPlayer() {
             items: []
         },
         cooldowns: [0, 0, 0],
-        maxcooldowns: [100, 100, 100],
+        maxcooldowns: getMaxCooldowns(character),
         animations: {
             name: "",
             current: 0,
@@ -34,4 +34,14 @@ function newPlayer() {
     }
 
     return thisPlayer;
+}
+
+function getMaxCooldowns(char) {
+    if (char == "chef") {
+        return [100, 100, 100]
+    } else if (char == "fighter") {
+        return [25, 2, 100]
+    } else {
+        return [100, 100, 100]
+    }
 }

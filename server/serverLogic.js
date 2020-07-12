@@ -13,20 +13,20 @@ module.exports = {
             } else if (type == "item") {
                 var possx = obj.xpos + obj.xvel;
                 var possy = obj.ypos + obj.yvel;
-                if (mapMaker.collisionCheck(possx, possy, localLevel)) {
+                if (mapMaker.collisionCheck(possx, possy, localLevel, true)) {
                     obj.xpos = possx;
                     obj.ypos = possy;
                 } else {
                     possx = obj.xpos + obj.xvel;
                     possy = obj.ypos;
-                    if (mapMaker.collisionCheck(possx, possy, localLevel)) {
+                    if (mapMaker.collisionCheck(possx, possy, localLevel, true)) {
                         obj.xpos = possx;
                         obj.ypos = possy;
                         obj.yvel = -obj.yvel;
                     } else {
                         possx = obj.xpos;
                         possy = obj.ypos + obj.yvel;
-                        if (mapMaker.collisionCheck(possx, possy, localLevel)) {
+                        if (mapMaker.collisionCheck(possx, possy, localLevel, true)) {
                             obj.xpos = possx;
                             obj.ypos = possy;
                             obj.xvel = -obj.xvel;
@@ -40,14 +40,14 @@ module.exports = {
                 }
             } else if (type == "monster") {
                 currentMonsters++;
-                world[worldID] = moveMonster(world, obj);
+                world[worldID] = moveMonster(world, obj, localLevel);
             } else if (type == "food") {
                 currentFood++;
             }
         }
         if (currentPlayers > 0) {
-            if (currentMonsters < 1) {
-                world = spawnMonsters(world);
+            if (currentMonsters < 5) {
+                world = spawnMonsters(world, localLevel);
             }
         }
         return world;
@@ -58,6 +58,9 @@ module.exports = {
             for (var j = 0; j < 5; j++) {
                 var coords = i + "," + j;
                 var number = chance(0.2, 1);
+                if (i == 0 && j == 0) {
+                    number = 0;
+                }
                 console.log("random: " + number);
                 switch (number) {
                     case 0:
@@ -132,7 +135,13 @@ function chance(over, amount) {
     return option;
 }
 
+function distance(dx, dy) {
+    return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+}
 
+function dist(sx, sy, ex, ey) {
+    return distance(ex - sx, ey - sy);
+}
 
 
 
@@ -145,36 +154,85 @@ function randID() {
     return "#" + Math.floor(Math.random() * 16777215) + getCurrentTime();
 }
 
-
-function spawnMonsters(world) {
-
-    var name = "monster" + randID();
-    var newMonster = {
-        uniqueID: name,
-        type: "monster",
-        target: "",
-        health: 8,
-        maxhealth: 8,
-        xpos: 0,
-        ypos: 0,
-        xvel: 0,
-        yvel: 0,
-        inventory: {
-            primary: "",
-            secondary: "",
-            movement: "",
-            items: []
-        },
-        animations: {
-            name: "",
-            current: 0,
-            max: 0,
-            loop: true,
+function getActiveSpawners(world, level) {
+    var playerLocations = [];
+    for (var worldID in world) {
+        var worldObj = world[worldID];
+        if (worldObj.type == "player") {
+            playerLocations.push({ x: worldObj.xpos, y: worldObj.ypos });
         }
     }
-    world[name] = newMonster;
-    console.log("Made new Monster: " + name);
-    console.log(newMonster);
+
+    var minactivedistance = 200;
+    var maxactivedistance = 1000;
+    var activeSpawners = [];
+    for (var levelID in level) {
+        var levelObj = level[levelID];
+        if (levelObj.type == "spawner") {
+            for (var playerloc of playerLocations) {
+                console.log("playerlocs")
+                console.log(playerloc);
+                var tDist = dist(playerloc.x, playerloc.y, levelObj.x, levelObj.y);
+                if (tDist > minactivedistance && tDist < maxactivedistance) {
+                    activeSpawners.push(levelObj);
+                }
+            }
+        }
+    }
+    return activeSpawners;
+
+}
+
+function spawnMonsters(world, level) {
+    var spawners = getActiveSpawners(world, level);
+
+    if (spawners.length > 0) {
+        var index = Math.floor(Math.random() * spawners.length);
+        var thisSpawner = spawners[index];
+        console.log("Attempting To spawn from: " + thisSpawner);
+        var spawnType = thisSpawner.spawnType;
+        var spawnHealth = 8;
+        if (spawnType == "food") {
+            spawnHealth = 14;
+        }
+        if (spawnType == "metal") {
+            spawnHealth = 8;
+        }
+        if (spawnType == "key") {
+            spawnHealth = 26;
+        }
+        var spawnPosX = thisSpawner.x + thisSpawner.w / 2;
+        var spawnPosY = thisSpawner.y + thisSpawner.h / 2;
+
+        var name = "monster" + randID();
+        var newMonster = {
+            uniqueID: name,
+            type: "monster",
+            monsterType: spawnType,
+            target: "",
+            health: spawnHealth,
+            maxhealth: spawnHealth,
+            xpos: spawnPosX,
+            ypos: spawnPosY,
+            xvel: 0,
+            yvel: 0,
+            inventory: {
+                primary: "",
+                secondary: "",
+                movement: "",
+                items: []
+            },
+            animations: {
+                name: "",
+                current: 0,
+                max: 0,
+                loop: true,
+            }
+        }
+        world[name] = newMonster;
+        console.log("Made new Monster: " + name);
+        console.log(newMonster);
+    }
     return world;
 }
 
@@ -182,9 +240,9 @@ function spawnMonsters(world) {
 function distance(dx, dy) {
     return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
 }
-var speed = 1;
+var speed = 0.1;
 
-function moveMonster(world, monster) {
+function moveMonster(world, monster, localLevel) {
     var target = monster.target;
     if (target == "") {
         for (var worldID in world) {
@@ -197,6 +255,7 @@ function moveMonster(world, monster) {
         }
     }
     if (target != "") {
+        var maxspeed = 1;
         var xpos = monster.xpos;
         var ypos = monster.ypos;
         var targObj = world[target];
@@ -208,11 +267,42 @@ function moveMonster(world, monster) {
         if (normalisef == 0) {} else {
             dx = dx / normalisef;
             dy = dy / normalisef;
-            monster.xvel = dx * speed;
-            monster.yvel = dy * speed;
+            pxvel = monster.xvel + dx * speed;
+            pyvel = monster.yvel + dy * speed;
+            if (Math.sqrt(Math.pow(pxvel, 2) + Math.pow(pyvel, 2)) < maxspeed) {
+                monster.xvel = pxvel;
+                monster.yvel = pyvel;
+            }
         }
     }
-    monster.xpos = monster.xpos + monster.xvel;
-    monster.ypos = monster.ypos + monster.yvel;
+    monster.xvel *= 0.9;
+    monster.yvel *= 0.9;
+    possx = monster.xpos + monster.xvel;
+    possy = monster.ypos + monster.yvel;
+    if (mapMaker.collisionCheck(possx, possy, localLevel)) {
+        monster.xpos = possx;
+        monster.ypos = possy;
+    } else {
+        possx = monster.xpos + monster.xvel;
+        possy = monster.ypos;
+        if (mapMaker.collisionCheck(possx, possy, localLevel)) {
+            monster.xpos = possx;
+            monster.ypos = possy;
+            //monster.yvel = -obj.yvel;
+        } else {
+            possx = monster.xpos;
+            possy = monster.ypos + monster.yvel;
+            if (mapMaker.collisionCheck(possx, possy, localLevel)) {
+                monster.xpos = possx;
+                monster.ypos = possy;
+                //obj.xvel = -obj.xvel;
+            } else {
+                possx = monster.xpos;
+                possy = monster.ypos;
+                //obj.xvel = -obj.xvel;
+                //obj.yvel = -obj.yvel;
+            }
+        }
+    }
     return monster;
 }
