@@ -22,7 +22,7 @@ function newPlayer() {
             burntimes: [100, 100, 100],
             items: []
         },
-        cooldowns: [0, 0, 0],
+        cooldowns: [0, 0, 0, 0],
         maxcooldowns: getMaxCooldowns(character),
         animations: {
             name: "",
@@ -32,16 +32,19 @@ function newPlayer() {
         },
         worldinfluence: {}
     }
-
+    if (character == "fighter") {
+        thisPlayer.inventory.items.push({ name: randID(), type: "key" })
+        thisPlayer.inventory.items.push({ name: randID(), type: "key" })
+    }
     return thisPlayer;
 }
 
 function getMaxCooldowns(char) {
     if (char == "chef") {
-        return [100, 100, 100]
+        return [100, 100, 100, 10]
     } else if (char == "fighter") {
-        return [25, 2, 100]
+        return [25, 2, 20, 10]
     } else {
-        return [100, 100, 100]
+        return [5, 100, 100, 10]
     }
 }

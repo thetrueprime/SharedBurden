@@ -57,22 +57,18 @@ function hostServer() {
                             objectsReceived = worldInfluencePlayerObjects[msg.uniqueID];
                         }
                         for (var objID in worldObjects) {
-                            console.log("Here ");
-                            console.log(msg);
                             var object = worldObjects[objID];
                             if ("status" in object) {
                                 if (object.status == "removed") {
                                     delete world[object.uniqueID];
-                                    console.log("Deleting");
                                 }
                                 if (object.status == "alive") {
                                     world[object.uniqueID] = object;
-                                    console.log("Setting");
                                 }
                             }
 
-                            console.log("Recieved World Influence Object: " +
-                                object.uniqueID);
+                            //console.log("Recieved World Influence Object: " +
+                            //    object.uniqueID);
                             objectsReceived[object.uniqueID] = object;
                         }
                         worldInfluencePlayerObjects[msg.uniqueID] = objectsReceived;
@@ -108,8 +104,8 @@ function sendOutUpdates() {
             var worldObjects = worldInfluencePlayerObjects[playerId];
             if (countProps(worldObjects)) {
                 var toSend = { type: "worldInfluenceAck", objects: worldObjects };
-                console.log("Sending to " + playerId);
-                console.log(toSend);
+                //console.log("Sending to " + playerId);
+                //console.log(toSend);
                 connection.send(JSON.stringify(toSend));
                 delete worldInfluencePlayerObjects[playerId];
             }

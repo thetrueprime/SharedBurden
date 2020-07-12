@@ -1,5 +1,15 @@
 var mapMaker = require('../map')
 
+function newCube(id, x, y) {
+    return {
+        uniqueID: id,
+        type: "cube",
+        xpos: x,
+        ypos: y,
+        xvel: 0,
+        yvel: 0,
+    };
+}
 module.exports = {
     mainLoop: function(world, localLevel) {
         var currentPlayers = 0;
@@ -10,7 +20,19 @@ module.exports = {
             var type = obj.type;
             if (type == "player") {
                 currentPlayers++;
-            } else if (type == "item") {
+                var floor = mapMaker.getFloorAt(obj.xpos, obj.ypos, localLevel);
+                if (floor.type == "dispenser") {
+                    var thisFloorCubeName = floor.x + "," + floor.y + "_cube";
+                    if (thisFloorCubeName in world) {
+
+                    } else {
+                        world[thisFloorCubeName] = newCube(thisFloorCubeName, obj.xpos, obj.ypos);
+                    }
+                }
+            } else if (type == "item" || type == "food" || type == "cube") {
+                if (type == "food") {
+                    currentFood++;
+                }
                 var possx = obj.xpos + obj.xvel;
                 var possy = obj.ypos + obj.yvel;
                 if (mapMaker.collisionCheck(possx, possy, localLevel, true)) {
@@ -41,12 +63,10 @@ module.exports = {
             } else if (type == "monster") {
                 currentMonsters++;
                 world[worldID] = moveMonster(world, obj, localLevel);
-            } else if (type == "food") {
-                currentFood++;
             }
         }
         if (currentPlayers > 0) {
-            if (currentMonsters < 5) {
+            if (currentMonsters < 10) {
                 world = spawnMonsters(world, localLevel);
             }
         }
@@ -59,12 +79,12 @@ module.exports = {
                 var coords = i + "," + j;
                 var number = chance(0.2, 1);
                 if (i == 0 && j == 0) {
-                    number = 0;
+                    number = 1;
                 }
                 console.log("random: " + number);
                 switch (number) {
                     case 0:
-                        data[coords] = { roomtype: "empty" }
+                        data[coords] = { roomtype: "loot" }
                         break;
                     case 1:
                         data[coords] = { roomtype: "loot" }
@@ -163,19 +183,23 @@ function getActiveSpawners(world, level) {
         }
     }
 
-    var minactivedistance = 200;
+    var minactivedistance = 400;
     var maxactivedistance = 1000;
     var activeSpawners = [];
     for (var levelID in level) {
         var levelObj = level[levelID];
         if (levelObj.type == "spawner") {
+            var active = true;
             for (var playerloc of playerLocations) {
-                console.log("playerlocs")
-                console.log(playerloc);
                 var tDist = dist(playerloc.x, playerloc.y, levelObj.x, levelObj.y);
                 if (tDist > minactivedistance && tDist < maxactivedistance) {
-                    activeSpawners.push(levelObj);
+
+                } else {
+                    active = false;
                 }
+            }
+            if (active) {
+                activeSpawners.push(levelObj);
             }
         }
     }
@@ -189,7 +213,6 @@ function spawnMonsters(world, level) {
     if (spawners.length > 0) {
         var index = Math.floor(Math.random() * spawners.length);
         var thisSpawner = spawners[index];
-        console.log("Attempting To spawn from: " + thisSpawner);
         var spawnType = thisSpawner.spawnType;
         var spawnHealth = 8;
         if (spawnType == "food") {
@@ -240,7 +263,7 @@ function spawnMonsters(world, level) {
 function distance(dx, dy) {
     return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
 }
-var speed = 0.1;
+var speed = 0.5;
 
 function moveMonster(world, monster, localLevel) {
     var target = monster.target;
@@ -249,13 +272,27 @@ function moveMonster(world, monster, localLevel) {
             var obj = world[worldID];
             var type = obj.type;
             if (type == "player") {
-                target = worldID;
-                monster.target = target;
+                var normalisef = dist(obj.xpos, obj.ypos, monster.xpos, monster.ypos);
+                if (normalisef < 1000) {
+                    if (obj.class == "fighter") {
+                        target = worldID;
+                        monster.target = target;
+                    } else {
+                        if (target == "") {
+                            target = worldID;
+                            monster.target = target;
+                        }
+                    }
+                }
             }
         }
     }
     if (target != "") {
-        var maxspeed = 1;
+        var type = monster.monsterType;
+        var maxspeed = 1 + Math.random();
+        if (type == "food") {
+            maxspeed = 5 + Math.random();
+        }
         var xpos = monster.xpos;
         var ypos = monster.ypos;
         var targObj = world[target];
@@ -264,6 +301,15 @@ function moveMonster(world, monster, localLevel) {
         var dx = tx - xpos;
         var dy = ty - ypos;
         var normalisef = distance(dx, dy);
+        monster.angle = Math.atan2(dy, dx);
+        if (normalisef < 200) {
+            if (type == "metal") {
+                normalisef = 0;
+            }
+        }
+        if (normalisef > 1000) {
+            target = "";
+        }
         if (normalisef == 0) {} else {
             dx = dx / normalisef;
             dy = dy / normalisef;
@@ -275,6 +321,35 @@ function moveMonster(world, monster, localLevel) {
             }
         }
     }
+
+    for (var worldID in world) {
+        var worldObj = world[worldID];
+        if (worldObj.type == "monster") {
+            var ox = worldObj.xpos;
+            var oy = worldObj.ypos;
+            var tdist = dist(ox, oy, monster.xpos, monster.ypos);
+            if (tdist < 16) {
+                if (tdist < 1) tdist = 1.0;
+                var difx = monster.xpos - ox;
+                var dify = monster.ypos - oy;
+                if (difx == 0) {
+                    monster.xvel += Math.random() - 0.5;
+                    monster.yvel += Math.random() - 0.5;
+                } else {
+                    var angle = Math.atan2(dify, difx);
+                    var xpushback = Math.cos(angle) * 1.0 / tdist;
+                    var ypushback = Math.sin(angle) * 1.0 / tdist;
+                    //console.log("difx: " + difx + " dify: " + dify);
+                    //console.log("xPushback: " + xpushback + " ypushback: " + ypushback + " angle: " + angle);
+                    monster.xvel += xpushback;
+                    monster.yvel += ypushback;
+                }
+            }
+        }
+    }
+
+
+
     monster.xvel *= 0.9;
     monster.yvel *= 0.9;
     possx = monster.xpos + monster.xvel;

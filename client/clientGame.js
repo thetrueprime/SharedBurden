@@ -102,5 +102,9 @@ function render() {
     requested = false;
 }
 
-
-main();
+if (serverIP) {
+    main();
+} else {
+    canvas.style.display = "none"
+    document.getElementById("start").style.display = "block";
+}

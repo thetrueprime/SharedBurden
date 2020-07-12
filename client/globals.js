@@ -6,10 +6,13 @@ ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
 //Networking
-var serverIP = "localhost"
+var serverIP = getQueryVariable("ip")
 var serverPort = ":32457";
 var localUsername = getQueryVariable("username");
 var character = getQueryVariable("character");
+if (!serverIP) {
+    throw ("no ip input \n Please Relog.")
+}
 if (!localUsername) {
     throw ("no username selected, unexpected results could occur. \n Please Relog.")
 }

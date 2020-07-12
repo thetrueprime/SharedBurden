@@ -31,7 +31,7 @@ function update() {
 
     ///MOVEMENT
     let inventory = player.inventory;
-    var maxspeed = 5;
+    var maxspeed = 10;
     //CHEF
     if (character == "chef") {
         if (inventory.movement != "") {
@@ -132,11 +132,13 @@ function update() {
                     }
                 }
             }
-            if (isGrappling) {
-                player.grappling = grapplePos;
-            } else {
-                delete player.grappling;
-            }
+        } else {
+            isGrappling = false;
+        }
+        if (isGrappling) {
+            player.grappling = grapplePos;
+        } else {
+            delete player.grappling;
         }
         //TODO SOME SORT OF COOLDOWN
         if (inventory.primary != "") {
@@ -150,13 +152,16 @@ function update() {
                         var item = items[itemid];
                         if (item.type == "food") {
                             if (!item.cooked && item.chopped) {
-                                displayMessage("Cooking Food!");
-                                item.cooked = true;
-                                chuckFood(item.name);
-                                toremove = itemid;
-                                playAnim("cooking");
-                                damageField(player.xpos, player.ypos, { x: 0, y: 1 }, 100, Math.PI * 2, 20, "FIRE");
-                                break;
+                                if (player.cooldowns[0] <= 0) {
+                                    player.cooldowns[0] = player.maxcooldowns[0];
+                                    displayMessage("Cooking Food!");
+                                    item.cooked = true;
+                                    chuckFood(item.name);
+                                    toremove = itemid;
+                                    playAnim("cooking");
+                                    damageField(player.xpos, player.ypos, { x: 0, y: 1 }, 100, Math.PI * 2, 20, "FIRE");
+                                    break;
+                                }
                             }
                         }
                     }
@@ -175,10 +180,14 @@ function update() {
                     for (let item of items) {
                         if (item.type == "food") {
                             if (!item.cooked && !item.chopped) {
-                                displayMessage("Chopping Food!");
-                                item.chopped = true;
-                                playAnim("chopping");
-                                break;
+                                if (player.cooldowns[1] <= 0) {
+                                    player.cooldowns[1] = player.maxcooldowns[1];
+                                    displayMessage("Chopping Food!");
+                                    item.chopped = true;
+                                    playAnim("chopping");
+                                    damageField(player.xpos, player.ypos, { x: 0, y: 1 }, 100, Math.PI * 2, 20, "KNOCKBACK");
+                                    break;
+                                }
                             }
                         }
                     }
@@ -190,7 +199,7 @@ function update() {
     //Engineer
     if (character == "engineer") {
         if (inventory.movement != "") {
-            var accel = 0.2;
+            var accel = 2;
             if (isPressing(KEY_CODES.up)) {
                 if (distance(player.xvel, player.yvel - accel) < maxspeed) {
                     player.yvel -= accel;
@@ -216,7 +225,7 @@ function update() {
     if (character == "fighter") {
         if (inventory.movement != "") {
             var ismoving = false;
-            var accel = 0.2;
+            var accel = 1;
             if (isPressing(KEY_CODES.up)) {
                 if (distance(player.xvel, player.yvel - accel) < maxspeed) {
                     player.yvel -= accel;
@@ -242,29 +251,32 @@ function update() {
                 ismoving = true;
             }
             if (!ismoving) {
-                player.xvel *= 0.9;
-                player.yvel *= 0.9;
+                player.xvel *= 0.75;
+                player.yvel *= 0.75;
             }
         }
         if (isPressing(KEY_CODES.primary)) {
-            let toremove = -1;
-            var items = player.inventory.items;
-            for (let itemID = 0; itemID < items.length; itemID++) {
-                let item = items[itemID];
-                if (item.type == "key") {
-                    console.log("Using Key");
-                    displayMessage("Using Key");
-                    if (useKey()) {
-                        toremove = itemID;
-                        //playAnim("key");
-                        break;
+            if (player.cooldowns[2] <= 0) {
+                player.cooldowns[2] = player.maxcooldowns[2];
+                let toremove = -1;
+                var items = player.inventory.items;
+                for (let itemID = 0; itemID < items.length; itemID++) {
+                    let item = items[itemID];
+                    if (item.type == "key") {
+                        console.log("Using Key");
+                        displayMessage("Using Key");
+                        if (useKey()) {
+                            toremove = itemID;
+                            //playAnim("key");
+                            break;
+                        }
                     }
                 }
-            }
-            if (toremove > -1) {
-                items.splice(toremove, 1);
-            } else {
-                displayMessage("You don't have any keys!");
+                if (toremove > -1) {
+                    items.splice(toremove, 1);
+                } else {
+                    displayMessage("You are too far from anything you can use your key on");
+                }
             }
         }
     }
@@ -302,7 +314,7 @@ function update() {
     } else if (getFloorTypeAt(player.xpos, player.ypos, level) == "ice") {
         friction = 0.999;
     } else {
-        friction = 0.99;
+        friction = 0.999;
     }
     player.xvel *= friction;
     player.yvel *= friction;
@@ -310,7 +322,7 @@ function update() {
 
 
     //----------------------- ATTACKS ------------------
-    for (var i = 0; i < 3; i++) {
+    for (var i = 0; i < player.cooldowns.length; i++) {
         player.cooldowns[i]--;
         if (player.cooldowns[i] <= 0) player.cooldowns[i] = 0;
     }
@@ -331,10 +343,11 @@ function update() {
                     let effect = "KNOCKBACK"
                     console.log("Attacking with SKATES");
                     damageField(xpos, ypos, facing, range, angle, damage, effect);
-                    playAnim("skates");
+                    playAnim("skates", facing);
                 }
             }
         }
+
     }
     if (character == "fighter") {
         //WHIP
@@ -351,7 +364,7 @@ function update() {
                     let effect = "KNOCKBACK"
                     console.log("Attacking with whip");
                     damageField(xpos, ypos, facing, range, angle, damage, effect);
-                    playAnim("whip");
+                    playAnim("whip", facing);
                 }
             }
         }
@@ -381,8 +394,44 @@ function update() {
     //----------------------- TOOLS ---------------
     // Engineer grab things with grappling
 
-
-
+    var pullstrength = 5;
+    if (character == "engineer") {
+        if (inventory.secondary != "") {
+            if (isPressing(KEY_CODES.rmb)) {
+                // if (player.cooldowns[1] <= 0) {
+                //   player.cooldowns[1] = player.maxcooldowns[1];
+                //Pull items
+                var mousePos = getMousePos();
+                var startx = player.xpos;
+                var starty = player.ypos;
+                var gx = mousePos.x;
+                var gy = mousePos.y;
+                var gradientX = startx - gx;
+                var gradientY = starty - gy;
+                var tdist = distance(gradientX, gradientY);
+                var cube = getCubeAt(gx, gy)
+                if (cube) {
+                    cube.status = "alive";
+                    if (isPressing(KEY_CODES.secondary)) {
+                        cube.xvel = 0;
+                        cube.yvel = 0;
+                        if (getFloorTypeAt(cube.xpos, cube.ypos, level) == "button") {
+                            delete world[cube.uniqueID];
+                            cube.status = "removed";
+                            player.worldinfluence[cube.uniqueID] = cube;
+                            dropChestLoot(cube.xpos, cube.ypos, 4);
+                        }
+                    } else {
+                        cube.xvel = gradientX / tdist * pullstrength;
+                        cube.yvel = gradientY / tdist * pullstrength;
+                    }
+                    console.log("pulling cube");
+                    player.worldinfluence[cube.uniqueID] = cube;
+                }
+                //}
+            }
+        }
+    }
 
     var holdtimechange = 0.25;
     if (inventory.primary != "") {
@@ -447,10 +496,13 @@ function update() {
         pickup();
     }
 
-
+    var mposget = getMousePos();
+    player.angle = Math.atan2(mposget.y - player.ypos, mposget.x - player.xpos);
 
     world[player.uniqueID] = player;
     removeDoors();
+
+    monsterUpdate();
 
     otherPlayers();
     physics();
@@ -458,25 +510,61 @@ function update() {
 }
 
 
+function monsterUpdate() {
+    //take damge etc
+    for (var worldID in world) {
+        var obj = world[worldID];
+        if (obj.type == "monster") {
+            if (dist(obj.xpos, obj.ypos, player.xpos, player.ypos) < 5) {
+                takeDamage(1);
+            }
+        }
+    }
+}
+
+
+
+var cubesize = 32
+
+function getCubeAt(xpos, ypos) {
+    for (var worldID in world) {
+        var obj = world[worldID];
+        if (obj.type == "cube") {
+            if (xpos >= obj.xpos && ypos >= obj.ypos && xpos <= obj.xpos + 32 && ypos <= obj.ypos + 32) {
+                return obj;
+            }
+        }
+    }
+    return false;
+}
+
+
+
 function damageField(xpos, ypos, facing, range, angle, damage, effect) {
     for (var worldID in world) {
         var obj = world[worldID];
         if (obj.type == "monster") {
-            var mxpos = obj.xpos;
-            var mypos = obj.ypos;
-            //console.log("xpos:" + xpos + " ypos:" + ypos + " mxpos:" + mxpos + " mypos:" + mypos);
-            if (dist(xpos, ypos, mxpos, mypos) < range) {
-                var facingAngle = Math.atan2(facing.y, facing.x);
-                var enemyAngle = Math.atan2(mypos - ypos, mxpos - xpos);
-                if (Math.abs(enemyAngle - facingAngle) < angle / 2) {
-                    //DAMGE CAN BE GIVEN;
-                    obj.health -= damage;
-                    if (effect == "KNOCKBACK") {
-                        obj.xvel = facing.x * 5;
-                        obj.yvel = facing.y * 5;
+            if (obj.health > 0) {
+                var mxpos = obj.xpos;
+                var mypos = obj.ypos;
+                //console.log("xpos:" + xpos + " ypos:" + ypos + " mxpos:" + mxpos + " mypos:" + mypos);
+                if (dist(xpos, ypos, mxpos, mypos) < range) {
+                    var facingAngle = Math.atan2(facing.y, facing.x);
+                    var enemyAngle = Math.atan2(mypos - ypos, mxpos - xpos);
+                    var angldiff = enemyAngle - facingAngle;
+                    if (angldiff > Math.PI) angldiff -= Math.PI * 2;
+                    if (angldiff < -Math.PI) angldiff += Math.PI * 2;
+                    if (angldiff <= angle / 2) {
+                        //DAMGE CAN BE GIVEN;
+                        obj.health -= damage;
+                        if (effect == "KNOCKBACK") {
+                            obj.xvel = facing.x * 20;
+                            obj.yvel = facing.y * 20;
+                        }
                         if (obj.health > 0) {
                             obj.status = "alive";
                         } else {
+                            obj.health = 0;
                             obj.status = "removed";
                             dropLoot(obj);
                         }
@@ -492,7 +580,7 @@ function damageField(xpos, ypos, facing, range, angle, damage, effect) {
 function dropLoot(monster) {
     var lootName = monster.monsterType;
     let id = randID();
-    player.worldinfluence[id] = { uniqueID: id, type: lootName, status: "alive", xpos: monster.xpos, ypos: monster.ypos };
+    player.worldinfluence[id] = { uniqueID: id, type: lootName, status: "alive", xpos: monster.xpos, ypos: monster.ypos, xvel: 0, yvel: 0 };
 }
 
 
@@ -512,6 +600,9 @@ function removeDoors() {
                 level[object.door1ID].locked = false;
                 level[object.door2ID].locked = false;
             }
+            if (object.type == "openChest") {
+                level[object.chestID].locked = false;
+            }
         }
     }
 }
@@ -521,35 +612,69 @@ function removeDoors() {
 function useKey() {
     var doorSide1 = false;
     var doorSide2 = false;
+    var chest = false;
     for (let li in level) {
         var door = level[li];
         if (door.type == "door") {
             if (door.locked) {
                 var howfar = dist(player.xpos, player.ypos, door.x, door.y);
-                if (howfar < 100) {
-                    console.log(li + " HowFar: " + howfar);
+                if (howfar < 150) {
                     if (!doorSide1) {
                         doorSide1 = li;
-                    } else {
+                    } else if (!doorSide2) {
                         doorSide2 = li;
                     }
                 }
             }
         }
+        if (door.type == "chest") {
+            if (door.locked) {
+                var howfar = dist(player.xpos, player.ypos, door.x, door.y);
+                if (howfar < 100) {
+                    if (!chest) {
+                        chest = li;
+                    }
+                }
+            }
+        }
     }
-    console.log("DoorSide1 " + doorSide1 + " DoorSide2" + doorSide2);
     if (doorSide1 && doorSide2) {
         let id = randID();
         level[doorSide1].locked = false;
         level[doorSide2].locked = false;
         player.worldinfluence[id] = { uniqueID: id, type: "openDoor", status: "alive", xpos: 0, ypos: 0, door1ID: doorSide1, door2ID: doorSide2 };
         return true;
+    } else if (chest) {
+        let id = randID();
+        level[chest].locked = false;
+        player.worldinfluence[id] = { uniqueID: id, type: "openChest", status: "alive", xpos: 0, ypos: 0, chestID: chest };
+        dropChestLoot(level[chest].x + level[chest].w / 2, level[chest].y + level[chest].h / 2, 50);
+        return true;
     }
     return false;
 }
 
 
-
+function dropChestLoot(x, y, range) {
+    for (var i = 0; i < 5; i++) {
+        var number = Math.floor(Math.random() * 3);
+        var toDrop = "food";
+        if (number == 1) {
+            toDrop = "metal";
+        }
+        if (number == 2) {
+            toDrop = "key";
+        }
+        var randomAngle = Math.random() * Math.PI * 2;
+        var xvel = Math.cos(randomAngle) * range;
+        var yvel = Math.sin(randomAngle) * range;
+        var foodname = randID();
+        let thrownitem = { uniqueID: foodname, type: toDrop, status: "alive", xpos: x + xvel, ypos: y + yvel, xvel: 0, yvel: 0 };
+        console.log("Chest Loot");
+        console.log(thrownitem);
+        player.worldinfluence[foodname] = thrownitem;
+    }
+}
 
 
 
@@ -601,10 +726,10 @@ function chuckFood(foodname) {
     var x = player.xpos;
     var y = player.ypos;
     var facing = getPlayerFacing();
-    var xv = facing.x;
-    var yv = facing.y;
+    var xv = facing.x * 5;
+    var yv = facing.y * 5;
     console.log("Chucking Food");
-    let thrownitem = { uniqueID: foodname, type: "food", status: "alive", xpos: x, ypos: y, xvel: xv + player.xvel, yvel: yv + player.yvel };
+    let thrownitem = { uniqueID: foodname, type: "food", status: "alive", cooked: true, xpos: x, ypos: y, xvel: xv + player.xvel, yvel: yv + player.yvel };
     player.worldinfluence[foodname] = thrownitem;
 }
 
@@ -614,40 +739,77 @@ function pickup() {
         var obj = world[worldID];
         var type = obj.type;
         if (type == "item") {
-            var thisDist = dist(obj.xpos, obj.ypos, player.xpos, player.ypos);
-            if (thisDist < 35) {
-                console.log("Attempt Pickup");
-                console.log(obj);
-                var objname = obj.uniqueID;
-                var cando = equipIfCan(objname);
-                if (cando) {
-                    console.log("Picked");
-                    obj.status = "removed";
-                    player.worldinfluence[obj.uniqueID] = obj;
+            var canPick = false;
+            if (!("status" in obj)) {
+                canPick = true;
+            } else {
+                if (obj.status == "alive") {
+                    canPick = true;
+                }
+            }
+            if (canPick) {
+                var thisDist = dist(obj.xpos, obj.ypos, player.xpos, player.ypos);
+                if (thisDist < 80) {
+                    console.log("Attempt Pickup");
+                    console.log(obj);
+                    var objname = obj.uniqueID;
+                    var cando = equipIfCan(objname);
+                    if (cando) {
+                        console.log("Picked");
+                        obj.status = "removed";
+                        player.worldinfluence[obj.uniqueID] = obj;
+                        world[worldID] = obj;
+                    }
                 }
             }
         }
         var thisDist = dist(obj.xpos, obj.ypos, player.xpos, player.ypos);
         if (thisDist < 35) {
-            console.log("Attempt Pickup");
-            console.log(obj);
-            var objname = obj.uniqueID;
-            var cando = false;
-            if (type == "food") {
-                cando = eat(obj);
-                if (cando) {
-                    console.log("ate");
+            var canPick = false;
+            if (!("status" in obj)) {
+                canPick = true;
+            } else {
+                if (obj.status == "alive") {
+                    canPick = true;
                 }
             }
-            if (type == "metal") {
-                cando = acquire(obj);
-                if (cando) {
-                    console.log("ate metal");
+            if (canPick) {
+                console.log("Attempt Pickup");
+                console.log(obj);
+                var objname = obj.uniqueID;
+                var cando = false;
+                if (type == "food") {
+                    if (player.cooldowns[3] <= 0) {
+                        cando = eat(obj);
+                        if (cando) {
+                            player.cooldowns[3] = player.maxcooldowns[3];
+                            console.log("ate");
+                        }
+                    }
                 }
-            }
-            if (cando) {
-                obj.status = "removed";
-                player.worldinfluence[obj.uniqueID] = obj;
+                if (type == "metal") {
+                    if (player.cooldowns[3] <= 0) {
+                        cando = acquire(obj);
+                        if (cando) {
+                            player.cooldowns[3] = player.maxcooldowns[3];
+                            console.log("ate metal");
+                        }
+                    }
+                }
+                if (type == "key") {
+                    if (player.cooldowns[3] <= 0) {
+                        cando = keyget(obj);
+                        if (cando) {
+                            player.cooldowns[3] = player.maxcooldowns[3];
+                            console.log("got key");
+                        }
+                    }
+                }
+                if (cando) {
+                    obj.status = "removed";
+                    player.worldinfluence[obj.uniqueID] = obj;
+                    world[worldID] = obj;
+                }
             }
         }
     }

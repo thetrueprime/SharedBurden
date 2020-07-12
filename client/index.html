@@ -7,8 +7,22 @@
 
 <body>
 
-
-    <canvas id="canvas" width="1000" height="1000" oncontextmenu="return false;"></canvas>
+    <form id="start" style="display: none;" action="#" method="GET">
+        Please Pick a unique username, the class you want to play and then enter the ip. </br>
+        Username:
+        <input name="username"></input>
+        </br>
+        Class:
+        <select id="character" name="character">
+            <option value="chef">Chef, a support character starting with a grappling hook.</option>
+            <option value="engineer">Astronaut, a problem solver starting with a jetpack</option>
+            <option value="fighter">Figure Skater, a battle ready character starting with ice skates</option>
+          </select></br>
+        Server ip (port 32457):
+        <input name="ip"></input>
+        <input type="submit"></submit>
+    </form>
+    <canvas id="canvas" width="1000" height="500" oncontextmenu="return false;"></canvas>
     <script>
         var module = {}; //when not using node
     </script>
