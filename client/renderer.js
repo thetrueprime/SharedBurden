@@ -90,8 +90,10 @@ function drawTerrain() {
         }
         if (type == "grappleBlock") {
             ctx.fillStyle = "#654321";
-            ctx.drawImage(loadedTextures["crate"], flooring.x, flooring.y, flooring.w, flooring.h);
-            draw = false;
+            if ("crate" in loadedTextures) {
+                ctx.drawImage(loadedTextures["crate"], flooring.x, flooring.y, flooring.w, flooring.h);
+                draw = false;
+            }
         }
         if (type == "solid") {
             ctx.fillStyle = "#808000";
@@ -176,7 +178,7 @@ var texturesToLoad = [
     { src: "images/heavcr.png", key: "fighter" },
     { src: "images/asssy.png", key: "engineer" },
     { src: "images/gateuse3.png", key: "gate" },
-    { src: "images/barrel.png", key: "cube" },
+    { src: "images/barrel2.png", key: "cube" },
     { src: "images/crate.png", key: "crate" },
 ]
 
